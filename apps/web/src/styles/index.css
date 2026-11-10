@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Токены из docs/03-design.md */
+:root {
+  --bg: #0b0c0f;
+  --surface: #15171c;
+  --surface2: #1e2128;
+  --line: #2a2e37;
+  --text: #f3f4f6;
+  --muted: #8b92a0;
+  --accent: #ff6b2c;
+  --xp: #3ddc84;
+  --gold: #ffc83d;
+  --blue: #4da3ff;
+  --purple: #b07cff;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-bg font-sans text-text antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+@layer components {
+  .card {
+    @apply rounded-card border border-line bg-surface p-4;
+  }
+  .h-section {
+    @apply mb-2.5 mt-6 text-[13px] font-bold uppercase tracking-[0.08em] text-muted;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}

@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B0C0F">
+<title>TopTeam — прототип</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0C0F;--surface:#15171C;--surface2:#1E2128;--line:#2A2E37;
+  --text:#F3F4F6;--muted:#8B92A0;--accent:#FF6B2C;--accent2:#FF8F5C;
+  --xp:#3DDC84;--gold:#FFC83D;--blue:#4DA3FF;--purple:#B07CFF;--r:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#050506;font-family:Inter,system-ui,sans-serif;color:var(--text)}
+body{display:flex;justify-content:center;align-items:center}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,textarea{font:inherit;color:var(--text)}
+.num{font-variant-numeric:tabular-nums}
+.phone{position:relative;width:100%;height:100%;background:var(--bg);overflow:hidden;display:flex;flex-direction:column}
+@media (min-width:500px){.phone{width:390px;height:844px;border-radius:44px;border:10px solid #1b1b1d;box-shadow:0 30px 90px rgba(0,0,0,.7)}}
+.screen{flex:1;overflow-y:auto;padding:18px 16px 110px;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+h1{font-size:26px;font-weight:900;letter-spacing:-.02em}
+h2{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:22px 0 10px}
+.muted{color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.row{display:flex;align-items:center;gap:10px}
+.between{justify-content:space-between}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:54px;border-radius:16px;background:var(--accent);color:#fff;font-weight:800;font-size:16px;letter-spacing:.02em;transition:transform .1s}
+.btn:active{transform:scale(.97)}
+.btn.ghost{background:var(--surface2);color:var(--text)}
+.chip{padding:6px 12px;border-radius:999px;background:var(--surface2);font-size:13px;font-weight:600;color:var(--muted)}
+.chip.on{background:var(--text);color:var(--bg)}
+.seg{display:flex;background:var(--surface2);border-radius:14px;padding:4px;gap:4px}
+.seg button{flex:1;height:40px;border-radius:10px;font-weight:700;font-size:14px;color:var(--muted)}
+.seg button.on{background:var(--accent);color:#fff}
+.av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;color:#0B0C0F}
+.tag{font-size:11px;font-weight:800;padding:3px 7px;border-radius:6px;letter-spacing:.04em}
+.tag.rx{background:rgba(255,107,44,.15);color:var(--accent)}
+.tag.sc{background:rgba(77,163,255,.15);color:var(--blue)}
+.tag.bg{background:rgba(61,220,132,.15);color:var(--xp)}
+.tag.pr{background:rgba(255,200,61,.15);color:var(--gold)}
+/* top bar */
+.topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.lvl{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--accent),#ff3d6e);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;line-height:1}
+.lvl small{font-size:9px;font-weight:700;opacity:.85}
+.xpbar{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.xpbar i{display:block;height:100%;background:linear-gradient(90deg,#2bbf6e,var(--xp));border-radius:99px;transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.streak{display:flex;align-items:center;gap:4px;font-weight:800;color:var(--accent)}
+.dots{display:flex;gap:6px}
+.dots span{width:12px;height:12px;border-radius:50%;background:var(--surface2);border:2px solid var(--line)}
+.dots span.f{background:var(--accent);border-color:var(--accent)}
+/* wod */
+.wod{background:linear-gradient(160deg,#22150F 0%,var(--surface) 55%);border-color:#3a2418}
+.wod .name{font-size:40px;font-weight:900;letter-spacing:-.03em;margin:6px 0 2px}
+.wod ul{list-style:none;margin:14px 0;display:grid;gap:8px}
+.wod li{display:flex;justify-content:space-between;font-weight:600}
+.wod li span:last-child{color:var(--muted);font-weight:500}
+.done{background:rgba(61,220,132,.08);border:1px solid rgba(61,220,132,.3);border-radius:14px;padding:14px;display:flex;justify-content:space-between;align-items:center}
+/* nav */
+.nav{position:absolute;bottom:0;left:0;right:0;height:84px;padding-bottom:18px;background:rgba(11,12,15,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:center;z-index:5}
+.nav button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--muted);width:64px}
+.nav button.on{color:var(--text)}
+.nav svg{width:24px;height:24px}
+.nav .plus{width:56px;height:56px;border-radius:18px;background:var(--accent);color:#fff;margin-top:-22px;box-shadow:0 8px 24px rgba(255,107,44,.45);justify-content:center}
+.nav .plus svg{width:28px;height:28px}
+/* lists */
+.lb{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line)}
+.lb .rk{width:26px;text-align:center;font-weight:800;color:var(--muted)}
+.lb.me{background:rgba(255,107,44,.08);border-radius:12px;border-bottom-color:transparent;padding-left:8px;padding-right:8px}
+.lb .res{margin-left:auto;font-weight:800;font-size:17px}
+.post{margin-bottom:12px}
+.post .result{display:flex;align-items:baseline;gap:10px;margin:12px 0}
+.post .result b{font-size:30px;font-weight:900;letter-spacing:-.02em}
+.acts{display:flex;gap:8px;margin-top:4px}
+.act{display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:12px;background:var(--surface2);font-weight:700;font-size:14px;color:var(--muted)}
+.act.on{background:rgba(255,107,44,.18);color:var(--accent)}
+.cmts{margin-top:10px;display:grid;gap:8px}
+.cmt{font-size:14px;background:var(--surface2);padding:8px 12px;border-radius:12px}
+.cmt b{margin-right:6px}
+.cin{display:flex;gap:8px}
+.cin input{flex:1;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:0 12px}
+.cin button{padding:0 14px;border-radius:12px;background:var(--accent);font-weight:700}
+/* profile */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+.stat b{display:block;font-size:22px;font-weight:900}
+.stat span{font-size:11px;color:var(--muted);font-weight:600}
+.badges{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.badge{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:10px;font-weight:600;text-align:center;color:var(--muted)}
+.badge .ic{width:62px;height:62px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:28px;border:2px solid var(--line);background:var(--surface)}
+.badge.lock .ic{filter:grayscale(1);opacity:.3}
+.r0 .ic{border-color:#5b616d}.r1 .ic{border-color:var(--blue);box-shadow:0 0 14px rgba(77,163,255,.25)}
+.r2 .ic{border-color:var(--purple);box-shadow:0 0 14px rgba(176,124,255,.3)}.r3 .ic{border-color:var(--gold);box-shadow:0 0 16px rgba(255,200,61,.35)}
+.prrow{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);font-weight:600}
+.prrow:last-child{border:0}
+/* sheet & overlays */
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:10;opacity:0;pointer-events:none;transition:opacity .25s}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:26px 26px 0 0;padding:10px 16px 28px;z-index:11;transform:translateY(105%);transition:transform .3s cubic-bezier(.2,.8,.2,1);max-height:92%;overflow-y:auto}
+.sheet.show{transform:none}
+.grab{width:40px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 14px}
+.timein{display:flex;justify-content:center;align-items:center;gap:8px;margin:20px 0}
+.timein input{width:96px;height:84px;border-radius:18px;border:2px solid var(--line);background:var(--bg);text-align:center;font-size:44px;font-weight:900;font-variant-numeric:tabular-nums}
+.timein input:focus{outline:none;border-color:var(--accent)}
+.timein span{font-size:40px;font-weight:900;color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+textarea{width:100%;height:70px;border-radius:14px;border:1px solid var(--line);background:var(--bg);padding:12px;resize:none}
+.full{position:absolute;inset:0;z-index:20;background:radial-gradient(circle at 50% 20%,#2a1608 0%,var(--bg) 65%);display:flex;flex-direction:column;padding:40px 20px 28px;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .3s}
+.full.show{opacity:1;pointer-events:auto}
+.hero{text-align:center;margin-bottom:20px}
+.hero .big{font-size:72px;font-weight:900;letter-spacing:-.04em;line-height:1;margin:8px 0}
+.hero .label{font-weight:900;letter-spacing:.14em;font-size:14px}
+.xpl{display:flex;justify-content:space-between;padding:8px 0;font-weight:600;opacity:0;transform:translateX(-12px);transition:all .35s}
+.xpl.in{opacity:1;transform:none}
+.xpl b{color:var(--xp)}
+.total{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);margin-top:6px;padding-top:12px;font-weight:900;font-size:20px}
+.total b{color:var(--xp);font-size:28px}
+.banner{margin-top:12px;padding:14px;border-radius:16px;display:flex;align-items:center;gap:12px;font-weight:800;opacity:0;transform:scale(.9);transition:all .4s cubic-bezier(.2,1.6,.4,1)}
+.banner.in{opacity:1;transform:none}
+.banner.lv{background:linear-gradient(90deg,rgba(61,220,132,.2),rgba(61,220,132,.05));border:1px solid rgba(61,220,132,.4)}
+.banner.bd{background:linear-gradient(90deg,rgba(255,200,61,.2),rgba(255,200,61,.05));border:1px solid rgba(255,200,61,.4)}
+.banner.st{background:linear-gradient(90deg,rgba(255,107,44,.2),rgba(255,107,44,.05));border:1px solid rgba(255,107,44,.4)}
+.banner .e{font-size:28px}
+.banner small{display:block;font-weight:600;color:var(--muted);font-size:12px}
+.sharecard{aspect-ratio:9/14;border-radius:24px;padding:24px;display:flex;flex-direction:column;background:linear-gradient(165deg,#FF6B2C 0%,#C2185B 55%,#1a0b2e 100%);position:relative;overflow:hidden;margin-bottom:16px}
+.sharecard::after{content:"";position:absolute;width:300px;height:300px;border-radius:50%;border:40px solid rgba(255,255,255,.07);right:-120px;top:-80px}
+.sharecard .logo{font-weight:900;letter-spacing:.1em;font-size:13px}
+.sharecard .w{font-size:22px;font-weight:900;margin-top:auto;letter-spacing:.05em}
+.sharecard .t{font-size:84px;font-weight:900;letter-spacing:-.04em;line-height:1}
+.toast{position:absolute;left:50%;bottom:100px;transform:translate(-50%,20px);background:var(--text);color:var(--bg);padding:12px 18px;border-radius:14px;font-weight:700;font-size:14px;z-index:40;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+canvas#cf{position:absolute;inset:0;z-index:30;pointer-events:none}
+/* login */
+.login{flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:32px 20px 40px;background:radial-gradient(circle at 70% 25%,rgba(255,107,44,.35),transparent 55%),radial-gradient(circle at 20% 60%,rgba(194,24,91,.25),transparent 50%),var(--bg)}
+.login .brand{font-size:52px;font-weight:900;letter-spacing:-.04em;line-height:.95}
+.login .brand span{color:var(--accent)}
+.tg{background:#2AABEE}
+.feat{display:grid;gap:10px;margin:28px 0}
+.feat div{display:flex;gap:12px;align-items:center;font-weight:600}
+.feat i{font-style:normal;font-size:22px;width:40px;height:40px;border-radius:12px;background:var(--surface);display:flex;align-items:center;justify-content:center}
+@keyframes pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.pop{animation:pop .6s cubic-bezier(.2,1.4,.4,1) both}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+  <div id="app" style="flex:1;display:flex;flex-direction:column;min-height:0"></div>
+  <div class="scrim" id="scrim" onclick="closeSheet()"></div>
+  <div class="sheet" id="sheet"></div>
+  <div class="full" id="full"></div>
+  <canvas id="cf"></canvas>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+// ---------- data ----------
+const COLORS=['#FF8F5C','#4DA3FF','#3DDC84','#FFC83D','#B07CFF','#FF6B9A','#5EE6D0'];
+const S={
+  authed:false, tab:'wod',
+  user:{name:'Азамат К.',initials:'АК',color:'#FFC83D',xp:2380,streak:6,weekDone:2,weekGoal:3,workouts:87,prCount:9,fires:96,freezes:1},
+  franPR:252, logged:null, logLevel:'RX', lbLevel:'RX', lbSex:'m',
+  board:[
+    {n:'Тимур А.',s:'m',l:'RX',t:201},{n:'Бакыт Ж.',s:'m',l:'RX',t:227},{n:'Эрлан Т.',s:'m',l:'RX',t:270},
+    {n:'Данияр С.',s:'m',l:'RX',t:302},{n:'Нурлан О.',s:'m',l:'RX',t:333},
+    {n:'Айжан М.',s:'f',l:'RX',t:255},{n:'Нургуль Б.',s:'f',l:'RX',t:340},
+    {n:'Руслан К.',s:'m',l:'Scaled',t:290},{n:'Максат Э.',s:'m',l:'Scaled',t:320},
+    {n:'Айгерим Т.',s:'f',l:'Scaled',t:355},{n:'Асель Р.',s:'f',l:'Scaled',t:390},
+    {n:'Улан Д.',s:'m',l:'Beginner',t:410},{n:'Жибек А.',s:'f',l:'Beginner',t:445}
+  ],
+  feed:[
+    {id:1,n:'Тимур А.',ago:'1 ч',kind:'res',wod:'Fran',res:'3:21',l:'RX',pr:true,fire:18,on:false,open:false,c:[{n:'Эрлан Т.',t:'Машина 🔥'},{n:'Айжан М.',t:'Как ты это делаешь?!'}]},
+    {id:2,n:'Айгерим Т.',ago:'2 ч',kind:'badge',badge:'Разгон',emoji:'🔥',desc:'Серия 4 недели подряд',fire:11,on:true,open:false,c:[]},
+    {id:3,n:'Айжан М.',ago:'3 ч',kind:'res',wod:'Fran',res:'4:15',l:'RX',pr:false,fire:9,on:false,open:false,c:[{n:'Тимур А.',t:'Сильно!'}]},
+    {id:4,n:'Руслан К.',ago:'5 ч',kind:'level',lvl:10,title:'Боец',fire:14,on:false,open:false,c:[]},
+    {id:5,n:'Бакыт Ж.',ago:'вчера',kind:'res',wod:'Back Squat 1RM',res:'150 кг',l:'RX',pr:true,fire:22,on:true,open:false,c:[{n:'Данияр С.',t:'Монстр'}]}
+  ],
+  prs:[['Fran','4:12'],['Grace','3:05'],['Helen','9:48'],['Back Squat 1RM','120 кг'],['Deadlift 1RM','160 кг'],['Clean & Jerk 1RM','92 кг']],
+  badges:[
+    {n:'Добро пожаловать',e:'👋',r:0,u:1,d:'Зарегистрироваться и вступить в зал'},
+    {n:'Первая кровь',e:'🩸',r:0,u:1,d:'Первый записанный результат'},
+    {n:'Первый PR',e:'⚡',r:0,u:1,d:'Первый личный рекорд'},
+    {n:'Десятка',e:'🔟',r:0,u:1,d:'10 тренировок'},
+    {n:'Полтинник',e:'💪',r:1,u:1,d:'50 тренировок'},
+    {n:'Сотня',e:'💯',r:2,u:0,d:'100 тренировок'},
+    {n:'Разгон',e:'🔥',r:0,u:1,d:'Серия 4 недели'},
+    {n:'Привычка',e:'📅',r:1,u:0,d:'Серия 12 недель'},
+    {n:'PR-машина',e:'🚀',r:1,u:0,d:'10 личных рекордов'},
+    {n:'Двойной удар',e:'⚔️',r:1,u:0,d:'2 PR в один день'},
+    {n:'Познакомься с Fran',e:'💃',r:0,u:1,d:'Выполнить Fran'},
+    {n:'Девичник',e:'👯',r:1,u:1,d:'5 разных Girls-бенчмарков'},
+    {n:'Герой',e:'🎖️',r:1,u:0,d:'Первый Hero WOD'},
+    {n:'Murph',e:'🇺🇸',r:2,u:0,d:'Выполнить Murph'},
+    {n:'На пьедестале',e:'🥉',r:1,u:0,d:'Впервые в топ-3 WOD дня'},
+    {n:'Чемпион дня',e:'🏆',r:1,u:0,d:'1-е место WOD дня'},
+    {n:'Поддержка',e:'🤜',r:0,u:1,d:'Поставить 50 🔥'},
+    {n:'Любимчик зала',e:'❤️‍🔥',r:1,u:0,d:'Получить 100 🔥'},
+    {n:'Полгода огня',e:'🌋',r:2,u:0,d:'Серия 26 недель'},
+    {n:'Король зала',e:'👑',r:3,u:0,d:'10 раз 1-е место'}
+  ]
+};
+const ICON={
+  feed:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>',
+  wod:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  lb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 21V11M16 21V7M12 21V3M4 21h16"/></svg>',
+  me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>'
+};
+// ---------- helpers ----------
+const $=id=>document.getElementById(id);
+const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+const lvlOf=xp=>Math.floor(Math.sqrt(xp/50))+1;
+const xpFor=L=>50*(L-1)*(L-1);
+const title=L=>L<5?'Новичок':L<10?'Атлет':L<15?'Боец':L<20?'Ветеран':L<30?'Зверь':'Легенда';
+const ini=n=>n.split(' ').map(w=>w[0]).join('').slice(0,2);
+const col=n=>COLORS[[...n].reduce((a,c)=>a+c.charCodeAt(0),0)%COLORS.length];
+const av=(n,size=40)=>`<div class="av" style="background:${col(n)};width:${size}px;height:${size}px">${ini(n)}</div>`;
+const tagOf=l=>`<span class="tag ${l==='RX'?'rx':l==='Scaled'?'sc':'bg'}">${l.toUpperCase()}</span>`;
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2000)}
+function vibrate(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+
+// ---------- render ----------
+function render(){
+  const app=$('app');
+  if(!S.authed){app.innerHTML=loginView();return}
+  const views={feed:feedView,wod:wodView,lb:lbView,me:meView};
+  app.innerHTML=`<div class="screen" id="scr">${views[S.tab]()}</div>${navView()}`;
+}
+function navView(){
+  const b=(k,label)=>`<button class="${S.tab===k?'on':''}" onclick="go('${k}')">${ICON[k]}${label}</button>`;
+  return `<nav class="nav">${b('feed','Лента')}${b('wod','Сегодня')}
+    <button class="plus" onclick="openLog()" aria-label="Записать результат">${ICON.plus}</button>
+    ${b('lb','Рейтинг')}${b('me','Профиль')}</nav>`;
+}
+function go(t){S.tab=t;render();$('scr').scrollTop=0}
+
+function loginView(){
+  return `<div class="login">
+    <div class="brand">TOP<span>TEAM</span></div>
+    <p class="muted" style="margin-top:12px;font-size:17px;line-height:1.4">Цифровая доска твоего зала.<br>Записывай. Бей рекорды. Качай уровень.</p>
+    <div class="feat">
+      <div><i>⚡</i>Результат за 10 секунд</div>
+      <div><i>🏆</i>Рейтинг зала каждый день</div>
+      <div><i>🔥</i>Серии, уровни и бейджи</div>
+    </div>
+    <button class="btn tg" onclick="login()">✈️ Войти через Telegram</button>
+    <p class="muted" style="text-align:center;font-size:12px;margin-top:14px">Зал: <b style="color:var(--text)">TopTeam Box · Бишкек</b> (по QR-коду)</p>
+  </div>`;
+}
+function login(){S.authed=true;render();setTimeout(()=>toast('👋 Бейдж «Добро пожаловать» уже твой'),400)}
+
+function topbar(){
+  const u=S.user,L=lvlOf(u.xp),a=xpFor(L),b=xpFor(L+1),p=Math.round((u.xp-a)/(b-a)*100);
+  return `<div class="topbar">
+    <div class="lvl"><small>LVL</small>${L}</div>
+    <div style="flex:1">
+      <div class="row between" style="margin-bottom:6px;font-size:13px;font-weight:700"><span>${title(L)}</span><span class="muted num">${u.xp} / ${b} XP</span></div>
+      <div class="xpbar"><i style="width:${p}%"></i></div>
+    </div>
+    <div class="streak">🔥<span class="num">${u.streak}</span></div>
+  </div>`;
+}
+function wodView(){
+  const u=S.user,lg=S.logged;
+  const dots=Array.from({length:u.weekGoal},(_,i)=>`<span class="${i<u.weekDone?'f':''}"></span>`).join('');
+  const count=S.board.length;
+  return `${topbar()}
+  <div class="card row between" style="margin-bottom:14px">
+    <div><div style="font-weight:800">Серия ${u.streak} нед.</div><div class="muted" style="font-size:13px;margin-top:2px">${u.weekDone>=u.weekGoal?'Неделя выполнена ✅':`${u.weekDone} из ${u.weekGoal} на этой неделе`}</div></div>
+    <div class="dots">${dots}</div>
+  </div>
+  <div class="card wod">
+    <div class="row between"><span class="muted" style="font-size:12px;font-weight:800;letter-spacing:.08em">ВТ, 10 НОЯБРЯ · WOD ДНЯ</span><span class="tag pr">БЕНЧМАРК</span></div>
+    <div class="name">FRAN</div>
+    <div class="muted" style="font-weight:600">For Time · 21-15-9</div>
+    <ul><li><span>Thrusters</span><span>43 / 30 кг</span></li><li><span>Pull-ups</span><span>—</span></li></ul>
+    <div class="row between" style="font-size:13px;margin-bottom:16px"><span class="muted">Тайм-кап 10:00</span><span>Твой PR: <b class="num" style="color:var(--gold)">${fmt(S.franPR)}</b></span></div>
+    ${lg?`<div class="done"><div><div class="muted" style="font-size:12px;font-weight:700">ТВОЙ РЕЗУЛЬТАТ</div><div style="font-size:26px;font-weight:900" class="num">${fmt(lg.sec)} ${tagOf(lg.level)} ${lg.isPR?'<span class="tag pr">PR</span>':''}</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:900">#${lg.rank}</div><div class="muted" style="font-size:12px">${lg.level}</div></div></div>`
+        :`<button class="btn" onclick="openLog()">ЗАПИСАТЬ РЕЗУЛЬТАТ</button>`}
+  </div>
+  <div class="row between" style="margin-top:14px">
+    <div class="row"><div class="row" style="gap:0">${S.board.slice(0,4).map((p,i)=>`<div style="margin-left:${i?-10:0}px;border:2px solid var(--bg);border-radius:50%">${av(p.n,30)}</div>`).join('')}</div><span class="muted" style="font-size:13px;font-weight:600">Записали ${count} атлетов</span></div>
+    <button onclick="go('lb')" style="color:var(--accent);font-weight:700;font-size:14px">Рейтинг →</button>
+  </div>
+  <h2>Тренер · Эрлан Т.</h2>
+  <div class="card muted" style="font-size:14px;line-height:1.5">Сегодня — на скорость. Thrusters без пауз сколько сможешь, на подтягиваниях дроби по 5–7. Scaled: 30/20 кг, ring rows.</div>`;
+}
+
+function lbView(){
+  const rows=S.board.filter(r=>r.l===S.lbLevel&&r.s===S.lbSex).sort((a,b)=>a.t-b.t);
+  const medal=['🥇','🥈','🥉'];
+  const seg=['RX','Scaled','Beginner'].map(l=>`<button class="${S.lbLevel===l?'on':''}" onclick="S.lbLevel='${l}';render()">${l}</button>`).join('');
+  const sx=[['m','Мужчины'],['f','Женщины']].map(([k,t])=>`<button class="chip ${S.lbSex===k?'on':''}" onclick="S.lbSex='${k}';render()">${t}</button>`).join('');
+  return `<h1>Рейтинг</h1><p class="muted" style="margin:4px 0 16px">Fran · For Time · сегодня</p>
+  <div class="seg">${seg}</div>
+  <div class="row" style="margin:12px 0 6px">${sx}</div>
+  ${rows.length?rows.map((r,i)=>`<div class="lb ${r.me?'me':''}"><div class="rk">${medal[i]||i+1}</div>${av(r.n,36)}<div><div style="font-weight:700">${r.n}${r.me?' (ты)':''}</div>${r.pr?'<span class="tag pr">PR</span>':''}</div><div class="res num" style="${i===0?'color:var(--gold)':''}">${fmt(r.t)}</div></div>`).join('')
+  :`<div class="card muted" style="text-align:center;margin-top:12px">Пока никого. Стань первым 💪</div>`}`;
+}
+
+function feedView(){
+  return `<h1>Лента</h1><p class="muted" style="margin:4px 0 16px">TopTeam Box · Бишкек</p>
+  ${S.feed.map(p=>{
+    let body='';
+    if(p.kind==='res') body=`<div class="result"><b class="num">${p.res}</b>${tagOf(p.l)}${p.pr?'<span class="tag pr">🏆 НОВЫЙ PR</span>':''}</div><div class="muted" style="font-size:13px;margin-bottom:10px">${p.wod}</div>`;
+    if(p.kind==='badge') body=`<div class="row" style="margin:12px 0"><div class="badge r0" style="flex-direction:row"><div class="ic pop" style="width:52px;height:52px;font-size:24px">${p.emoji}</div></div><div><div style="font-weight:800">Новый бейдж: «${p.badge}»</div><div class="muted" style="font-size:13px">${p.desc}</div></div></div>`;
+    if(p.kind==='level') body=`<div class="row" style="margin:12px 0"><div class="lvl" style="width:52px;height:52px"><small>LVL</small>${p.lvl}</div><div><div style="font-weight:800">Достиг уровня ${p.lvl}</div><div class="muted" style="font-size:13px">Новый титул: ${p.title}</div></div></div>`;
+    return `<div class="card post"><div class="row">${av(p.n)}<div><div style="font-weight:700">${p.n}</div><div class="muted" style="font-size:12px">${p.ago}</div></div></div>${body}
+    <div class="acts"><button class="act ${p.on?'on':''}" onclick="fire(${p.id})">🔥 <span class="num">${p.fire}</span></button><button class="act" onclick="toggleC(${p.id})">💬 ${p.c.length}</button><button class="act" style="margin-left:auto" onclick="toast('Карточка результата → Telegram')">↗</button></div>
+    ${p.open?`<div class="cmts">${p.c.map(c=>`<div class="cmt"><b>${c.n}</b>${c.t}</div>`).join('')}<div class="cin"><input id="ci${p.id}" placeholder="Поддержи атлета…" onkeydown="if(event.key==='Enter')addC(${p.id})"><button onclick="addC(${p.id})">→</button></div></div>`:''}
+    </div>`}).join('')}`;
+}
+function fire(id){const p=S.feed.find(x=>x.id===id);p.on=!p.on;p.fire+=p.on?1:-1;if(p.on){vibrate(15);toast('+1 XP за поддержку')}const st=$('scr').scrollTop;render();$('scr').scrollTop=st}
+function toggleC(id){const p=S.feed.find(x=>x.id===id);p.open=!p.open;const st=$('scr').scrollTop;render();$('scr').scrollTop=st}
+function addC(id){const i=$('ci'+id);if(!i.value.trim())return;const p=S.feed.find(x=>x.id===id);p.c.push({n:S.user.name,t:i.value.trim()});const st=$('scr').scrollTop;render();$('scr').scrollTop=st;toast('+2 XP за комментарий')}
+
+function meView(){
+  const u=S.user,L=lvlOf(u.xp);
+  const un=S.badges.filter(b=>b.u).length;
+  return `<div class="row" style="gap:14px;margin-bottom:18px"><div class="av" style="width:64px;height:64px;font-size:22px;background:${u.color}">${u.initials}</div>
+    <div><h1 style="font-size:22px">${u.name}</h1><div class="muted" style="font-size:14px">Уровень ${L} · ${title(L)} · RX</div></div></div>
+  ${topbar().replace('class="topbar"','class="topbar card"')}
+  <div class="stats">
+    <div class="stat"><b class="num">${u.workouts}</b><span>тренировок</span></div>
+    <div class="stat"><b class="num" style="color:var(--gold)">${u.prCount}</b><span>рекордов</span></div>
+    <div class="stat"><b class="num" style="color:var(--accent)">${u.streak}</b><span>нед. серия</span></div>
+  </div>
+  <div class="card row between" style="margin-top:8px"><span style="font-weight:700">❄️ Заморозки серии</span><span class="muted">${u.freezes} из 2</span></div>
+  <h2>Достижения · ${un}/${S.badges.length}</h2>
+  <div class="badges">${S.badges.map((b,i)=>`<button class="badge r${b.r} ${b.u?'':'lock'}" onclick="badgeInfo(${i})"><div class="ic">${b.e}</div>${b.n}</button>`).join('')}</div>
+  <h2>Личные рекорды</h2>
+  <div class="card" style="padding:4px 16px">${S.prs.map(([n,v])=>`<div class="prrow"><span>${n}</span><span class="num" style="color:var(--gold)">${v}</span></div>`).join('')}</div>
+  <button class="btn ghost" style="margin-top:20px" onclick="S.authed=false;render()">Выйти (к экрану входа)</button>`;
+}
+function badgeInfo(i){
+  const b=S.badges[i],rn=['Обычный','Редкий','Эпический','Легендарный'][b.r];
+  openSheet(`<div style="text-align:center;padding:10px 0 6px"><div class="badge r${b.r} ${b.u?'':'lock'}" style="display:inline-flex"><div class="ic pop" style="width:96px;height:96px;font-size:46px;border-radius:30px">${b.e}</div></div>
+  <h1 style="margin-top:14px;font-size:22px">${b.n}</h1><p class="muted" style="margin:6px 0 4px">${rn} · +${[25,75,200,500][b.r]} XP</p><p style="margin-bottom:20px">${b.d}</p>
+  <div class="tag ${b.u?'bg':'sc'}" style="display:inline-block;margin-bottom:20px">${b.u?'ПОЛУЧЕН':'ЕЩЁ НЕ ПОЛУЧЕН'}</div></div>
+  <button class="btn ghost" onclick="closeSheet()">Закрыть</button>`);
+}
+
+// ---------- sheet ----------
+function openSheet(html){$('sheet').innerHTML='<div class="grab"></div>'+html;$('sheet').classList.add('show');$('scrim').classList.add('show')}
+function closeSheet(){$('sheet').classList.remove('show');$('scrim').classList.remove('show')}
+
+function openLog(){
+  if(S.logged){toast('Результат по Fran уже записан ✅');return}
+  const seg=()=>['RX','Scaled','Beginner'].map(l=>`<button class="${S.logLevel===l?'on':''}" onclick="S.logLevel='${l}';document.querySelectorAll('#lvseg button').forEach(b=>b.classList.toggle('on',b.textContent==='${l}'))">${l}</button>`).join('');
+  openSheet(`<div class="row between"><div><h1 style="font-size:24px">Fran</h1><div class="muted" style="font-size:14px">For Time · 21-15-9 · PR ${fmt(S.franPR)}</div></div><span class="tag pr">БЕНЧМАРК</span></div>
+  <div class="seg" id="lvseg" style="margin-top:18px">${seg()}</div>
+  <div class="timein"><input id="mm" inputmode="numeric" maxlength="2" value="03" onfocus="this.select()"><span>:</span><input id="ss" inputmode="numeric" maxlength="2" value="58" onfocus="this.select()"></div>
+  <p class="muted" style="text-align:center;font-size:12px;margin-top:-10px;margin-bottom:16px">мин : сек · попробуй время меньше ${fmt(S.franPR)}, чтобы побить рекорд</p>
+  <div class="row between" style="font-weight:700;margin-bottom:6px"><span>Тяжесть (RPE)</span><span id="rpev" style="color:var(--accent)">8</span></div>
+  <input type="range" min="1" max="10" value="8" oninput="$('rpev').textContent=this.value">
+  <textarea style="margin:14px 0" placeholder="Заметка: как прошло, что улучшить…"></textarea>
+  <button class="btn" onclick="saveLog()">СОХРАНИТЬ</button>`);
+}
+
+function saveLog(){
+  const m=parseInt($('mm').value)||0,s=parseInt($('ss').value)||0,sec=m*60+s;
+  if(sec<=0||s>59){toast('Проверь время');return}
+  const u=S.user,lv=S.logLevel,isPR=lv==='RX'&&sec<S.franPR,oldPR=S.franPR;
+  const items=[['Тренировка',50],[lv==='RX'?'Уровень RX':'Уровень '+lv,lv==='RX'?10:5],['Бенчмарк Fran',20]];
+  if(isPR) items.push(['Личный рекорд',50]);
+  items.push([`Бонус серии ×${u.streak}`,Math.min(5*u.streak,40)]);
+  // leaderboard
+  const me={n:u.name,s:'m',l:lv,t:sec,me:true,pr:isPR};S.board.push(me);
+  const rank=S.board.filter(r=>r.l===lv&&r.s==='m').sort((a,b)=>a.t-b.t).indexOf(me)+1;
+  if(rank<=3) items.push([`Топ-${rank} рейтинга ${lv}`,[20,15,10][rank-1]]);
+  // badges
+  const newBadges=[];
+  const unlock=n=>{const b=S.badges.find(x=>x.n===n);if(b&&!b.u){b.u=1;newBadges.push(b);items.push([`Бейдж «${n}»`,[25,75,200,500][b.r]])}};
+  if(isPR){u.prCount++;S.franPR=sec;S.prs[0][1]=fmt(sec);if(u.prCount>=10)unlock('PR-машина')}
+  if(rank<=3)unlock('На пьедестале');
+  if(rank===1)unlock('Чемпион дня');
+  const gained=items.reduce((a,[,x])=>a+x,0),oldXp=u.xp,oldL=lvlOf(oldXp);
+  u.xp+=gained;u.workouts++;u.weekDone++;
+  const weekDone=u.weekDone===u.weekGoal;if(weekDone)u.streak++;
+  const newL=lvlOf(u.xp);
+  S.logged={sec,level:lv,isPR,rank};
+  S.feed.unshift({id:Date.now(),n:u.name,ago:'только что',kind:'res',wod:'Fran',res:fmt(sec),l:lv,pr:isPR,fire:0,on:false,open:false,c:[]});
+  if(newL>oldL) S.feed.splice(1,0,{id:Date.now()+1,n:u.name,ago:'только что',kind:'level',lvl:newL,title:title(newL),fire:0,on:false,open:false,c:[]});
+  closeSheet();render();
+  celebrate({sec,lv,isPR,oldPR,rank,items,gained,oldXp,oldL,newL,newBadges,weekDone});
+}
+
+function celebrate(r){
+  const u=S.user,a=xpFor(r.oldL),b=xpFor(r.oldL+1),from=Math.round((r.oldXp-a)/(b-a)*100);
+  const f=$('full');
+  f.innerHTML=`<div class="hero">
+    ${r.isPR?`<div class="label pop" style="color:var(--gold)">🏆 НОВЫЙ РЕКОРД</div><div class="big num pop" style="color:var(--gold)">${fmt(r.sec)}</div><div class="muted">было ${fmt(r.oldPR)} · <b style="color:var(--xp)">−${fmt(r.oldPR-r.sec)}</b></div>`
+     :`<div class="label pop" style="color:var(--accent)">РЕЗУЛЬТАТ ЗАПИСАН</div><div class="big num pop">${fmt(r.sec)}</div><div class="muted">Fran · ${r.lv}</div>`}
+    <div style="margin-top:12px;font-weight:800">#${r.rank} в рейтинге ${r.lv} сегодня</div>
+  </div>
+  <div class="card" style="padding:10px 16px">
+    ${r.items.map(([n,x])=>`<div class="xpl"><span>${n}</span><b>+${x}</b></div>`).join('')}
+    <div class="total"><span>Итого</span><b class="num" id="tot">+0 XP</b></div>
+    <div class="xpbar" style="margin-top:12px"><i id="cbar" style="width:${from}%"></i></div>
+  </div>
+  <div id="bans">
+    ${r.newL>r.oldL?`<div class="banner lv"><span class="e">▲</span><div>Уровень ${r.newL}<small>${title(r.newL)} · до следующего ${xpFor(r.newL+1)-u.xp} XP</small></div></div>`:''}
+    ${r.weekDone?`<div class="banner st"><span class="e">🔥</span><div>Неделя выполнена!<small>Серия теперь ${u.streak} нед.</small></div></div>`:''}
+    ${r.newBadges.map(b=>`<div class="banner bd"><span class="e">${b.e}</span><div>Новый бейдж: «${b.n}»<small>${b.d}</small></div></div>`).join('')}
+  </div>
+  <div style="margin-top:auto;padding-top:20px;display:grid;gap:10px">
+    <button class="btn" onclick="share()">↗ Поделиться карточкой</button>
+    <button class="btn ghost" onclick="closeFull()">Готово</button>
+  </div>`;
+  f.classList.add('show');
+  if(r.isPR||r.newL>r.oldL){confetti();vibrate([30,50,30])}
+  const lines=[...f.querySelectorAll('.xpl')];
+  lines.forEach((el,i)=>setTimeout(()=>el.classList.add('in'),300+i*250));
+  const t0=300+lines.length*250;
+  let cur=0;const step=Math.ceil(r.gained/30);
+  setTimeout(()=>{const iv=setInterval(()=>{cur=Math.min(r.gained,cur+step);$('tot').textContent='+'+cur+' XP';if(cur>=r.gained)clearInterval(iv)},25)},300);
+  setTimeout(()=>{$('cbar').style.width=(r.newL>r.oldL?100:Math.round((u.xp-a)/(b-a)*100))+'%'},t0);
+  if(r.newL>r.oldL) setTimeout(()=>{const bar=$('cbar');bar.style.transition='none';bar.style.width='0%';requestAnimationFrame(()=>{bar.style.transition='';bar.style.width=Math.round((u.xp-xpFor(r.newL))/(xpFor(r.newL+1)-xpFor(r.newL))*100)+'%'})},t0+1300);
+  [...f.querySelectorAll('.banner')].forEach((el,i)=>setTimeout(()=>{el.classList.add('in');vibrate(20)},t0+600+i*450));
+}
+function closeFull(){$('full').classList.remove('show');go('wod')}
+
+function share(){
+  const lg=S.logged,u=S.user,L=lvlOf(u.xp);
+  const f=$('full');
+  f.innerHTML=`<div class="sharecard">
+    <div class="row between"><span class="logo">TOPTEAM</span><span style="font-size:12px;font-weight:700;opacity:.85">10.11.2026</span></div>
+    <div class="w">FRAN · ${lg.level}</div>
+    <div class="t num">${fmt(lg.sec)}</div>
+    ${lg.isPR?'<div style="margin-top:10px"><span class="tag" style="background:rgba(255,255,255,.2);color:#fff;font-size:13px">🏆 НОВЫЙ ЛИЧНЫЙ РЕКОРД</span></div>':''}
+    <div class="row" style="margin-top:22px">${av(u.name,44)}<div><div style="font-weight:800">${u.name}</div><div style="font-size:13px;opacity:.85">Lvl ${L} · 🔥 ${u.streak} нед. · #${lg.rank} в зале</div></div></div>
+    <div style="font-size:12px;opacity:.7;margin-top:14px">TopTeam Box · Бишкек</div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <button class="btn tg" onclick="toast('Отправлено в чат зала ✈️ (имитация)')">Telegram</button>
+    <button class="btn" style="background:linear-gradient(90deg,#F58529,#DD2A7B,#8134AF)" onclick="toast('Открыли Instagram Stories (имитация)')">Instagram</button>
+  </div>
+  <button class="btn ghost" style="margin-top:10px" onclick="closeFull()">Готово</button>`;
+}
+
+// ---------- confetti ----------
+function confetti(){
+  const c=$('cf'),ph=$('phone'),x=c.getContext('2d');
+  c.width=ph.clientWidth;c.height=ph.clientHeight;
+  const cols=['#FF6B2C','#FFC83D','#3DDC84','#4DA3FF','#B07CFF','#fff'];
+  const P=Array.from({length:160},()=>({x:c.width/2,y:c.height*.3,vx:(Math.random()-.5)*14,vy:Math.random()*-14-4,s:Math.random()*7+4,c:cols[Math.random()*cols.length|0],r:Math.random()*6,vr:(Math.random()-.5)*.3}));
+  let t=0;(function f(){x.clearRect(0,0,c.width,c.height);P.forEach(p=>{p.vy+=.35;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);x.restore()});if(++t<180)requestAnimationFrame(f);else x.clearRect(0,0,c.width,c.height)})();
+}
+
+render();
+</script>
+</body>
+</html>
