@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { toPng } from 'html-to-image';
 import { levelTitle } from '../../lib/game';
 import { useMe } from '../../lib/me';
+import { webApp } from '../../lib/telegram';
 
 export interface ShareData {
   title: string;
@@ -19,6 +20,7 @@ export function ShareButton({ data, className = '' }: { data: ShareData; classNa
   const ref = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [render, setRender] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
 
   const share = async () => {
     setBusy(true);
@@ -32,6 +34,8 @@ export function ShareButton({ data, className = '' }: { data: ShareData; classNa
       const text = `${data.title}: ${data.scoreText}${data.isPr ? ' 🏆 PR' : ''} — TopTeam`;
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], text }).catch(() => {});
+      } else if (webApp) {
+        setPreview(dataUrl); // во встроенном браузере Telegram — сохранить долгим нажатием
       } else {
         const a = document.createElement('a');
         a.href = dataUrl;
@@ -50,6 +54,15 @@ export function ShareButton({ data, className = '' }: { data: ShareData; classNa
       <button onClick={share} disabled={busy} className={className}>
         {busy ? 'Готовим…' : '📤 Поделиться'}
       </button>
+      {preview &&
+        createPortal(
+          <div className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-3 bg-black/90 p-6" onClick={() => setPreview(null)}>
+            <img src={preview} alt="Карточка результата" className="max-h-[75vh] rounded-2xl" />
+            <div className="text-center text-sm font-semibold text-white/80">Нажми и удерживай картинку, чтобы сохранить или переслать</div>
+            <button className="h-11 rounded-2xl bg-surface2 px-6 font-bold">Закрыть</button>
+          </div>,
+          document.body,
+        )}
       {render &&
         createPortal(
           <div style={{ position: 'fixed', left: -10000, top: 0 }} aria-hidden>

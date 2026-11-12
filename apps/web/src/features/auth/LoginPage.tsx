@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { callFunction, supabase } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
+import { botLink, webApp } from '../../lib/telegram';
 
 const FEATURES = [
   ['⚡', 'Результат за 10 секунд'],
@@ -35,7 +36,7 @@ function randomSecret() {
 }
 
 export function LoginPage() {
-  const { session } = useAuth();
+  const { session, tgError } = useAuth();
   const [pending, setPending] = useState<Pending | null>(loadPending);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
@@ -127,12 +128,21 @@ export function LoginPage() {
           ))}
         </ul>
 
-        {pending ? (
+        {webApp ? (
+          <div className="card mb-3 text-center">
+            <div className="font-extrabold">{tgError ? 'Не удалось войти через Telegram' : 'Входим…'}</div>
+            {tgError && (
+              <button className="mt-3 h-11 w-full rounded-2xl bg-tg font-extrabold text-white" onClick={() => window.location.reload()}>
+                Попробовать снова
+              </button>
+            )}
+          </div>
+        ) : pending ? (
           <div className="card mb-3 text-center">
             <div className="mb-1 animate-pulse text-2xl">✈️</div>
             <div className="font-extrabold">Ждём подтверждения в Telegram…</div>
             <div className="mt-1 text-sm text-muted">
-              Нажми «Start» в боте и вернись сюда — вход произойдёт автоматически.
+              Нажми «Start» в боте и вернись в эту вкладку — вход произойдёт автоматически.
             </div>
             <a href={pending.url} className="mt-3 inline-block font-bold text-tg">
               Открыть бота ещё раз
@@ -148,9 +158,18 @@ export function LoginPage() {
             </button>
           </div>
         ) : (
-          <Button variant="telegram" onClick={start} disabled={starting}>
-            {starting ? 'Открываем Telegram…' : '✈️ Войти через Telegram'}
-          </Button>
+          <>
+            <a
+              href={botLink()}
+              className="flex h-[54px] w-full items-center justify-center gap-2 rounded-2xl bg-tg text-base font-extrabold tracking-wide text-white active:scale-[0.97]"
+            >
+              ✈️ Открыть в Telegram
+            </a>
+            <p className="mt-2 text-center text-[13px] text-muted">Приложение откроется прямо в Telegram — без паролей</p>
+            <Button variant="ghost" className="mt-4" onClick={start} disabled={starting}>
+              {starting ? 'Открываем Telegram…' : 'Войти в этом браузере'}
+            </Button>
+          </>
         )}
         {error && <p className="mt-3 text-center text-sm font-semibold text-accent">{error}</p>}
       </div>

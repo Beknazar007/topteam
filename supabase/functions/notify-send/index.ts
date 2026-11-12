@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
       chat_id: n.tg_id,
       text: n.text,
       disable_web_page_preview: true,
-      reply_markup: { inline_keyboard: [[{ text: 'Открыть TopTeam', url: site }]] },
+      reply_markup: { inline_keyboard: [[{ text: 'Открыть TopTeam', web_app: { url: site } }]] },
     }).catch((e) => ({ ok: false, description: String(e) }));
     if (res.ok) {
       sent++;

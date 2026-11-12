@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import type { Gym } from '../../lib/me';
+import { botLink } from '../../lib/telegram';
 
 /** Приглашение в зал: ссылка /join/КОД + QR для печати на стену. */
 export function InviteCard({ gym }: { gym: Gym }) {
-  const link = `${window.location.origin}/join/${gym.invite_code}`;
+  // QR ведёт в бота: «Start» → кнопка Mini App «Вступить в зал» (вход и вступление — автоматически)
+  const link = botLink(gym.invite_code);
   const [qr, setQr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -30,7 +32,7 @@ export function InviteCard({ gym }: { gym: Gym }) {
       <div className="mb-3 flex items-center justify-between">
         <div>
           <div className="font-extrabold">Пригласить в зал</div>
-          <div className="text-[13px] text-muted">Распечатай QR и повесь на стену</div>
+          <div className="text-[13px] text-muted">QR откроет TopTeam в Telegram и сразу добавит в зал</div>
         </div>
         <div className="num rounded-xl bg-surface2 px-3 py-1.5 text-lg font-black tracking-[0.2em]">{gym.invite_code}</div>
       </div>

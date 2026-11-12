@@ -1,17 +1,48 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import { callFunction, supabase } from './supabase';
 
-type AuthState = { session: Session | null; loading: boolean };
+type AuthState = { session: Session | null; loading: boolean; tgError?: boolean };
 const AuthContext = createContext<AuthState>({ session: null, loading: true });
+
+const emailFor = (tgId: number) => `tg_${tgId}@users.topteam.local`;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ session: null, loading: true });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setState({ session: data.session, loading: false }));
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => setState({ session, loading: false }));
-    return () => data.subscription.unsubscribe();
+    let ready = false;
+    let cancelled = false;
+
+    (async () => {
+      let { data: { session } } = await supabase.auth.getSession();
+      let tgError = false;
+      // Внутри Telegram Mini App входим автоматически по подписанным initData
+      const wa = window.Telegram?.WebApp;
+      const tgUser = wa?.initData ? wa.initDataUnsafe.user : undefined;
+      if (tgUser && session?.user.email !== emailFor(tgUser.id)) {
+        try {
+          const { data } = await callFunction<{ token_hash?: string }>('auth-telegram', { init_data: wa!.initData });
+          if (data.token_hash) {
+            const v = await supabase.auth.verifyOtp({ token_hash: data.token_hash, type: 'magiclink' });
+            session = v.data.session;
+            tgError = !session;
+          } else tgError = true;
+        } catch {
+          tgError = true;
+        }
+      }
+      ready = true;
+      if (!cancelled) setState({ session, loading: false, tgError });
+    })();
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (ready) setState({ session, loading: false });
+    });
+    return () => {
+      cancelled = true;
+      data.subscription.unsubscribe();
+    };
   }, []);
 
   return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
