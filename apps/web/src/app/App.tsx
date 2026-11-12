@@ -1,6 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppLayout } from './AppLayout';
+import { RequireAuth, RequireOnboarded } from './guards';
 import { LoginPage } from '../features/auth/LoginPage';
+import { JoinPage } from '../features/onboarding/JoinPage';
+import { OnboardingPage } from '../features/onboarding/OnboardingPage';
 import { TodayPage } from '../features/today/TodayPage';
 import { FeedPage } from '../features/feed/FeedPage';
 import { LeaderboardPage } from '../features/leaderboard/LeaderboardPage';
@@ -10,11 +13,17 @@ export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route element={<AppLayout />}>
-        <Route index element={<TodayPage />} />
-        <Route path="feed" element={<FeedPage />} />
-        <Route path="leaderboard" element={<LeaderboardPage />} />
-        <Route path="profile" element={<ProfilePage />} />
+      <Route path="/join/:code" element={<JoinPage />} />
+      <Route element={<RequireAuth />}>
+        <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route element={<RequireOnboarded />}>
+          <Route element={<AppLayout />}>
+            <Route index element={<TodayPage />} />
+            <Route path="feed" element={<FeedPage />} />
+            <Route path="leaderboard" element={<LeaderboardPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+          </Route>
+        </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -10,5 +10,29 @@ if (!isSupabaseConfigured) {
 }
 
 export const supabase = createClient(url ?? 'http://localhost:54321', anonKey ?? 'missing-anon-key', {
-  auth: { persistSession: true, autoRefreshToken: true },
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
 });
+
+/** Вызов публичной Edge Function. Возвращает статус и JSON (без исключений на 4xx). */
+export async function callFunction<T>(name: string, body: unknown): Promise<{ status: number; data: T }> {
+  const res = await fetch(`${url}/functions/v1/${name}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: anonKey ?? '' },
+    body: JSON.stringify(body),
+  });
+  const data = (await res.json().catch(() => ({}))) as T;
+  return { status: res.status, data };
+}
+
+/** Понятный текст ошибки RPC для пользователя. */
+export function errorText(e: unknown): string {
+  const msg = (e as { message?: string })?.message ?? String(e);
+  const map: Record<string, string> = {
+    invalid_invite_code: 'Неверный код зала',
+    not_authenticated: 'Нужно войти заново',
+    forbidden: 'Недостаточно прав',
+    invalid_date: 'Неверная дата',
+  };
+  for (const [k, v] of Object.entries(map)) if (msg.includes(k)) return v;
+  return 'Что-то пошло не так. Попробуй ещё раз.';
+}

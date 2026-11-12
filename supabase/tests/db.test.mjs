@@ -63,3 +63,15 @@ await expectErr('нельзя накрутить XP напрямую', as(U.ath,
 await as(U.ath, `update profiles set sex='m', week_goal=4 where id = auth.uid()`);
 ok('можно править свой профиль', (await db.query(`select week_goal from profiles where id=$1`, [U.ath])).rows[0].week_goal === 4);
 ok('рейтинг-вью работает', (await as(U.ath, `select count(*)::int c from wod_leaderboard`)).rows[0].c === 0);
+
+// ===== Этап 1: вход и онбординг =====
+ok('бейдж «Профиль готов» после выбора пола', (await db.query(`select count(*)::int c from user_badges where user_id=$1 and code='profile_done'`, [U.ath])).rows[0].c === 1);
+await as(U.ath, `update profiles set sex='f' where id = auth.uid()`);
+ok('«Профиль готов» не выдаётся повторно', (await db.query(`select count(*)::int c from xp_events where user_id=$1 and ref_id='profile_done'`, [U.ath])).rows[0].c === 1);
+const newU = '55555555-5555-5555-5555-555555555555';
+await db.query(`insert into auth.users values ($1)`, [newU]);
+await db.query(`select upsert_tg_profile($1, 777, 'aibek', 'Айбек Т.')`, [newU]);
+await db.query(`select upsert_tg_profile($1, 777, 'aibek_new', 'Другое имя')`, [newU]);
+const np = (await db.query(`select p.display_name, p.tg_username, s.user_id is not null has_stats from profiles p left join user_stats s on s.user_id=p.id where p.id=$1`, [newU])).rows[0];
+ok('upsert_tg_profile: имя не перетирается, username обновляется, статистика создана', np.display_name === 'Айбек Т.' && np.tg_username === 'aibek_new' && np.has_stats);
+await expectErr('атлет не может вызвать upsert_tg_profile', as(U.ath, `select upsert_tg_profile($1, 1, 'x', 'x')`, [U.ath]));
