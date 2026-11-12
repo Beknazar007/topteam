@@ -38,6 +38,10 @@ export function errorText(e: unknown): string {
     invalid_score: 'Проверь результат — значение выглядит неверно',
     wod_has_results: 'Нельзя удалить: уже есть результаты',
     invalid_benchmark: 'Бенчмарк не найден',
+    invalid_comment: 'Комментарий: от 1 до 500 символов',
+    rate_limited: 'Слишком часто — подожди минутку',
+    own_item: 'Себе 🔥 поставить нельзя',
+    cannot_change_own_role: 'Свою роль менять нельзя',
   };
   for (const [k, v] of Object.entries(map)) if (msg.includes(k)) return v;
   return 'Что-то пошло не так. Попробуй ещё раз.';

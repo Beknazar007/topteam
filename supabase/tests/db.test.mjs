@@ -142,3 +142,44 @@ await expectErr('нельзя удалить WOD с результатами', a
 await expectErr('атлет не может удалить WOD', as(U.ath, `select delete_wod($1)`, [wodOld.id]));
 await as(U.coach, `select delete_wod($1)`, [wodOld.id]);
 ok('тренер удалил пустой WOD', (await db.query(`select count(*)::int c from wods where id=$1`, [wodOld.id])).rows[0].c === 0);
+
+// ===== Этап 3: 🔥, комментарии, удаление результата =====
+const item = (await db.query(`select id from feed_items where result_id=$1`, [r1.result_id])).rows[0].id;
+const xpCoach0 = await xpOf(U.coach);
+const f1 = (await as(U.coach, `select toggle_fire($1) r`, [item])).rows[0].r;
+ok('🔥 поставлен, счётчик 1', f1.fired && f1.fire_count === 1);
+ok('+1 XP за 🔥', (await xpOf(U.coach)) === xpCoach0 + 1);
+ok('уведомление автору о 🔥', (await db.query(`select count(*)::int c from notifications where user_id=$1 and kind='fire'`, [U.ath])).rows[0].c === 1);
+const f2 = (await as(U.coach, `select toggle_fire($1) r`, [item])).rows[0].r;
+await as(U.coach, `select toggle_fire($1) r`, [item]);
+ok('🔥 убран и снова поставлен: счётчик 1, уведомление не дублируется', !f2.fired && (await db.query(`select fire_count from feed_items where id=$1`, [item])).rows[0].fire_count === 1
+  && (await db.query(`select count(*)::int c from notifications where user_id=$1 and kind='fire'`, [U.ath])).rows[0].c === 1);
+await expectErr('нельзя 🔥 себе', as(U.ath, `select toggle_fire($1)`, [item]));
+await expectErr('чужой не может 🔥', as(U.out, `select toggle_fire($1)`, [item]));
+ok('fires_received у автора = 1', (await db.query(`select fires_received from user_stats where user_id=$1`, [U.ath])).rows[0].fires_received === 1);
+
+const xpOwner0 = await xpOf(U.owner);
+const cm = (await as(U.owner, `select * from add_comment($1, '  Огонь, красава!  ')`, [item])).rows[0];
+ok('комментарий сохранён без пробелов, +2 XP', cm.body === 'Огонь, красава!' && (await xpOf(U.owner)) === xpOwner0 + 2);
+ok('comment_count = 1 и уведомление автору', (await db.query(`select comment_count from feed_items where id=$1`, [item])).rows[0].comment_count === 1
+  && (await db.query(`select count(*)::int c from notifications where user_id=$1 and kind='comment'`, [U.ath])).rows[0].c === 1);
+await expectErr('пустой комментарий', as(U.owner, `select add_comment($1, '   ')`, [item]));
+await expectErr('атлет не удалит чужой комментарий', as(U.ath, `select delete_comment($1)`, [cm.id]));
+await as(U.coach, `select delete_comment($1)`, [cm.id]);
+ok('тренер удалил комментарий, счётчик 0', (await db.query(`select comment_count from feed_items where id=$1`, [item])).rows[0].comment_count === 0);
+
+// Удаление результата: PR откатывается к лучшему оставшемуся, XP возвращается
+const prKey = `b:${fran}:RX`;
+ok('до удаления PR = 4:30 (270)', Number((await db.query(`select score from personal_records where user_id=$1 and pr_key=$2`, [U.ath, prKey])).rows[0].score) === 270);
+const st0 = (await db.query(`select xp, pr_count from user_stats where user_id=$1`, [U.ath])).rows[0];
+const back = (await db.query(`select coalesce(sum(amount),0)::int s from xp_events where ref_id=$1 and reason <> 'badge'`, [r3.result_id])).rows[0].s;
+await expectErr('чужой атлет не удалит результат', as(U.out, `select delete_result($1)`, [r3.result_id]));
+await as(U.ath, `select delete_result($1)`, [r3.result_id]);
+const st1 = (await db.query(`select xp, pr_count from user_stats where user_id=$1`, [U.ath])).rows[0];
+ok(`удалён свой результат: XP −${back}, PR −1`, st1.xp === st0.xp - back && st1.pr_count === st0.pr_count - 1);
+ok('PR восстановлен к лучшему оставшемуся 4:40 (280)', Number((await db.query(`select score from personal_records where user_id=$1 and pr_key=$2`, [U.ath, prKey])).rows[0].score) === 280);
+ok('пост результата удалён из ленты', (await db.query(`select count(*)::int c from feed_items where result_id=$1`, [r3.result_id])).rows[0].c === 0);
+const r3b = await log(U.ath, wodY2.id, 'RX', 275);
+ok('после удаления можно перезаписать результат (PR 4:35)', r3b.is_pr && Number(r3b.old_score) === 280);
+await as(U.coach, `select delete_result($1)`, [rs.result_id]);
+ok('тренер удалил результат владельца, PR силовой исчез', (await db.query(`select count(*)::int c from personal_records where user_id=$1 and pr_key=$2`, [U.owner, `e:${sq}:1`])).rows[0].c === 0);
