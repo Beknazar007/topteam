@@ -34,7 +34,12 @@ Deno.serve(async (req) => {
       ],
     });
     const info = await tg('getWebhookInfo', {});
-    return json({ set, menu, commands, info: { url: info.result?.url, error: info.result?.last_error_message } });
+    const me = await tg('getMe', {});
+    return json({
+      set, menu, commands,
+      info: { url: info.result?.url, error: info.result?.last_error_message },
+      has_main_web_app: me.result?.has_main_web_app ?? null,
+    });
   }
 
   const update = await req.json().catch(() => null);

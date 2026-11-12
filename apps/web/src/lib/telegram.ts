@@ -23,9 +23,12 @@ export const webApp: WebApp | null =
 
 export const BOT_USERNAME = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string | undefined) ?? 'TopTeam07Bot';
 
-/** Ссылка в бота; с кодом — бот сразу даёт кнопку «Вступить в зал». */
+/**
+ * Ссылка, открывающая главное Mini App бота сразу (без «Start»).
+ * С кодом зала — startapp=<КОД>: initMiniApp() сохранит код, онбординг вступит в зал автоматически.
+ */
 export function botLink(inviteCode?: string) {
-  return `https://t.me/${BOT_USERNAME}${inviteCode ? `?start=join_${inviteCode}` : ''}`;
+  return `https://t.me/${BOT_USERNAME}?startapp=${inviteCode ?? 'open'}`;
 }
 
 export function initMiniApp() {
