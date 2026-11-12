@@ -3,11 +3,12 @@ import confetti from 'canvas-confetti';
 import { Button } from '../../components/ui/Button';
 import { formatScore } from '../../lib/format';
 import { levelTitle } from '../../lib/game';
-import type { LogResponse } from '../../lib/wod';
+import { formatDay, type LogResponse, type Wod } from '../../lib/wod';
+import { ShareButton } from '../share/ShareButton';
 
 const RARITY_COLOR = ['text-text', 'text-rare', 'text-epic', 'text-gold'];
 
-export function Celebration({ r, onClose }: { r: LogResponse; onClose: () => void }) {
+export function Celebration({ r, wod, onClose }: { r: LogResponse; wod: Wod; onClose: () => void }) {
   const [shown, setShown] = useState(0);
   const levelUp = r.level_after > r.level_before;
 
@@ -75,9 +76,20 @@ export function Celebration({ r, onClose }: { r: LogResponse; onClose: () => voi
         </div>
       ))}
 
-      <Button className="mt-3" onClick={onClose}>
-        Готово
-      </Button>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <ShareButton
+          className="h-[54px] rounded-2xl bg-surface2 font-extrabold"
+          data={{
+            title: wod.title,
+            scoreText: formatScore(r.score_type, r.score, r.capped),
+            scale: r.scale,
+            isPr: r.is_pr,
+            sub: diff ?? (r.place ? `${r.place}-е место` : null),
+            date: formatDay(wod.wod_date),
+          }}
+        />
+        <Button onClick={onClose}>Готово</Button>
+      </div>
     </div>
   );
 }

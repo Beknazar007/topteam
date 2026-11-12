@@ -38,8 +38,8 @@ export function LogProvider({ children }: { children: ReactNode }) {
     <LogCtx.Provider value={value}>
       {children}
       <Sheet open={state.open} onClose={close}>
-        {state.done ? (
-          <Celebration r={state.done} onClose={close} />
+        {state.done && state.wod ? (
+          <Celebration r={state.done} wod={state.wod} onClose={close} />
         ) : state.wod ? (
           <ResultForm wod={state.wod} onDone={(done) => setState((s) => ({ ...s, done }))} />
         ) : (

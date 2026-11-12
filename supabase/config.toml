@@ -425,3 +425,6 @@ verify_jwt = false
 
 [functions.tg-webhook]
 verify_jwt = false
+
+[functions.notify-send]
+verify_jwt = false

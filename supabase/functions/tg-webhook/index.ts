@@ -51,13 +51,24 @@ Deno.serve(async (req) => {
     return json({ ok: true });
   }
 
+  // Вкл/выкл уведомлений
+  if (text === '/stop' || text === '/notify') {
+    const on = text === '/notify';
+    await admin().from('profiles').update({ notify: on }).eq('tg_id', from.id);
+    await tg('sendMessage', {
+      chat_id: msg.chat.id,
+      text: on ? '🔔 Уведомления включены.' : '🔕 Уведомления выключены. Включить снова: /notify',
+    });
+    return json({ ok: true });
+  }
+
   if (text.startsWith('/start')) {
     await tg('sendMessage', {
       chat_id: msg.chat.id,
       text:
         'Привет! Я бот TopTeam — цифровой доски твоего зала 🔥\n\n' +
         'Здесь будут приходить уведомления: новый WOD дня, 🔥 и комментарии к твоим результатам, напоминания о серии.\n\n' +
-        'Открой приложение и войди через Telegram:',
+        'Открой приложение и войди через Telegram:\n\n/stop — выключить уведомления, /notify — включить.',
       reply_markup: openButton,
     });
   }

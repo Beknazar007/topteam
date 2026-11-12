@@ -183,3 +183,30 @@ const r3b = await log(U.ath, wodY2.id, 'RX', 275);
 ok('после удаления можно перезаписать результат (PR 4:35)', r3b.is_pr && Number(r3b.old_score) === 280);
 await as(U.coach, `select delete_result($1)`, [rs.result_id]);
 ok('тренер удалил результат владельца, PR силовой исчез', (await db.query(`select count(*)::int c from personal_records where user_id=$1 and pr_key=$2`, [U.owner, `e:${sq}:1`])).rows[0].c === 0);
+
+// ===== Этап 4: итоги дня, недели, напоминания, очередь =====
+await db.query(`update profiles set sex = 'f' where id = $1`, [U.owner]);
+await log(U.owner, wod.id, 'RX', 320); // доска Fran / RX / Ж: ath 5:00 (1-я), owner 5:20 (2-я)
+const xpA = await xpOf(U.ath), xpO = await xpOf(U.owner);
+const pod = (await db.query(`select daily_podium() n`)).rows[0].n;
+ok(`итоги дня: награждены 2 (${pod})`, pod === 2);
+const sa = (await db.query(`select podiums, wins from user_stats where user_id=$1`, [U.ath])).rows[0];
+ok('1-е место: +20 XP + бейджи «На пьедестале» и «Чемпион дня» (+75+75)', (await xpOf(U.ath)) === xpA + 20 + 150 && sa.podiums === 1 && sa.wins === 1);
+ok('2-е место: +15 XP + «На пьедестале»', (await xpOf(U.owner)) === xpO + 15 + 75);
+ok('одиночная доска (Scaled, тренер) не награждается', (await db.query(`select count(*)::int c from xp_events where user_id=$1 and reason='podium'`, [U.coach])).rows[0].c === 0);
+ok('уведомления о пьедестале', (await db.query(`select count(*)::int c from notifications where kind='podium'`)).rows[0].c === 2);
+ok('повторный запуск итогов ничего не дублирует', (await db.query(`select daily_podium() n`)).rows[0].n === 0);
+
+await db.query(`update user_stats set week_start = bishkek_week_start() - 7 where user_id = $1`, [U.ath]);
+ok('close_weeks закрыл старую неделю', (await db.query(`select close_weeks() n`)).rows[0].n >= 1
+  && (await db.query(`select week_start = bishkek_week_start() ok from user_stats where user_id=$1`, [U.ath])).rows[0].ok);
+
+const rem = (await db.query(`select streak_reminders() n`)).rows[0].n;
+ok(`напоминания о серии: ${rem}`, rem >= 1);
+ok('напоминание раз в неделю', (await db.query(`select streak_reminders() n`)).rows[0].n === 0);
+
+const claimed = (await db.query(`select * from claim_notifications(100)`)).rows;
+ok(`очередь: забрано ${claimed.length}, у всех есть tg_id`, claimed.length > 0 && claimed.every(r => r.tg_id));
+ok('повторно уже не забираются', (await db.query(`select count(*)::int c from claim_notifications(100)`)).rows[0].c === 0);
+await expectErr('атлет не может забрать очередь', as(U.ath, `select * from claim_notifications(1)`));
+await expectErr('атлет не может запустить итоги дня', as(U.ath, `select daily_podium()`));

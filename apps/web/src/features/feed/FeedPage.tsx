@@ -10,6 +10,8 @@ import { useMe } from '../../lib/me';
 import { timeAgo } from '../../lib/rank';
 import { useComments, useFeed, useMyFires, type FeedItem } from '../../lib/social';
 import { errorText, supabase } from '../../lib/supabase';
+import { ShareButton } from '../share/ShareButton';
+import { formatDay } from '../../lib/wod';
 
 export function FeedPage() {
   const me = useMe();
@@ -141,6 +143,19 @@ function FeedCard({ item, fired: firedInit, myId }: { item: FeedItem; fired: boo
         >
           💬 <span className="num">{item.comment_count || ''}</span>
         </button>
+        {own && item.kind === 'result' && (
+          <ShareButton
+            className="ml-auto h-10 rounded-xl bg-surface2 px-3 text-sm font-bold text-muted"
+            data={{
+              title: String(p.title),
+              scoreText: formatScore(p.score_type as ScoreType, Number(p.score), Boolean(p.capped)),
+              scale: String(p.scale),
+              isPr: Boolean(p.is_pr),
+              sub: p.is_pr && p.old_score != null ? `было ${formatScore(p.score_type as ScoreType, Number(p.old_score))}` : null,
+              date: formatDay(new Date(new Date(item.created_at).getTime() + 6 * 3600_000).toISOString().slice(0, 10)),
+            }}
+          />
+        )}
       </div>
       {showComments && <Comments itemId={item.id} myId={myId} />}
     </div>
