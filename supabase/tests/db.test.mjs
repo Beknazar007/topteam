@@ -75,3 +75,70 @@ await db.query(`select upsert_tg_profile($1, 777, 'aibek_new', 'Другое и�
 const np = (await db.query(`select p.display_name, p.tg_username, s.user_id is not null has_stats from profiles p left join user_stats s on s.user_id=p.id where p.id=$1`, [newU])).rows[0];
 ok('upsert_tg_profile: имя не перетирается, username обновляется, статистика создана', np.display_name === 'Айбек Т.' && np.tg_username === 'aibek_new' && np.has_stats);
 await expectErr('атлет не может вызвать upsert_tg_profile', as(U.ath, `select upsert_tg_profile($1, 1, 'x', 'x')`, [U.ath]));
+
+// ===== Этап 2: log_result =====
+const days = async (n) => (await db.query(`select (bishkek_today() + $1::int)::text d`, [n])).rows[0].d;
+const xpOf = async (u) => (await db.query(`select xp from user_stats where user_id=$1`, [u])).rows[0].xp;
+const log = (u, w, scale, score, extra = {}) => as(u, `select log_result(p_wod => $1, p_scale => $2, p_score => $3, p_capped => $4) r`, [w, scale, score, extra.capped ?? false]).then(x => x.rows[0].r);
+
+const xp0 = await xpOf(U.ath);
+const r1 = await log(U.ath, wod.id, 'RX', 300);
+const sum = (r) => r.xp_items.reduce((a, i) => a + i.amount, 0);
+ok(`Fran RX 5:00: тренировка+RX+бенчмарк+первый замер = 95 (${r1.xp_total})`, r1.xp_total === 95 && sum(r1) === 95 && r1.baseline && !r1.is_pr);
+ok('бейджи «Первая кровь» и «Познакомься с Fran»', r1.badges.map(b => b.code).sort().join() === 'first_result,fran');
+ok('XP = до + 95 + 2×25 за бейджи', (await xpOf(U.ath)) === xp0 + 95 + 50 && r1.xp === xp0 + 145);
+ok('уровень посчитан по XP: ' + r1.level_after, r1.level_after === Math.floor(Math.sqrt(r1.xp / 50)) + 1);
+ok('место в рейтинге = 1', r1.place === 1);
+ok('пост результата в ленте', (await db.query(`select count(*)::int c from feed_items where kind='result' and result_id=$1`, [r1.result_id])).rows[0].c === 1);
+await expectErr('повторная запись того же WOD', log(U.ath, wod.id, 'RX', 290));
+await expectErr('нельзя записать результат напрямую в таблицу', as(U.ath, `insert into results (wod_id, user_id, scale, score) values ($1, auth.uid(), 'RX', 1)`, [wod.id]));
+await expectErr('чужой не может записать результат', log(U.out, wod.id, 'RX', 300));
+await expectErr('время 0 — неверный результат', log(U.coach, wod.id, 'RX', 0));
+
+// PR на вчерашнем Fran; третья тренировка за день — без XP за тренировку
+const wodY = (await as(U.coach, `select * from create_wod(p_gym => $1, p_date => $2::date, p_benchmark_id => $3)`, [gym.id, await days(-1), fran])).rows[0];
+const r2 = await log(U.ath, wodY.id, 'RX', 280);
+ok(`PR: 4:40 лучше 5:00 (+50 XP, было ${r2.old_score})`, r2.is_pr && Number(r2.old_score) === 300 && r2.xp_items.some(i => i.reason === 'pr' && i.amount === 50));
+ok('бейдж «Первый PR»', r2.badges.some(b => b.code === 'first_pr'));
+const wodY2 = (await as(U.coach, `select * from create_wod(p_gym => $1, p_date => $2::date, p_benchmark_id => $3)`, [gym.id, await days(-2), fran])).rows[0];
+const r3 = await log(U.ath, wodY2.id, 'RX', 270);
+ok('3-я тренировка за день: нет XP за тренировку, но PR засчитан', !r3.xp_items.some(i => i.reason === 'workout') && r3.is_pr);
+ok('бейдж «Двойной удар» (2 PR за день)', r3.badges.some(b => b.code === 'double_pr'));
+ok('PR в профиле = 2, тренировок = 2', (await db.query(`select pr_count, workouts from user_stats where user_id=$1`, [U.ath])).rows[0].pr_count === 2);
+const wodOld = (await as(U.coach, `select * from create_wod(p_gym => $1, p_date => $2::date, p_title => 'Old', p_format => 'other', p_score_type => 'none', p_description => 'x')`, [gym.id, await days(-5)])).rows[0];
+await expectErr('WOD старше 3 дней закрыт', log(U.ath, wodOld.id, 'RX', 1));
+
+// Силовая: 1RM, первый замер и PR не зависят от уровня
+const sq = (await db.query(`select id from exercises where name='Back Squat'`)).rows[0].id;
+const wodSq = (await as(U.coach, `select * from create_wod(p_gym => $1, p_date => $2::date, p_title => 'Back Squat 1RM', p_format => 'max_weight', p_exercise_id => $3, p_rep_max => 1, p_description => '')`, [gym.id, today, sq])).rows[0];
+const rs = await log(U.owner, wodSq.id, 'Scaled', 102.5);
+ok('силовая 102.5 кг: первый замер', rs.baseline && (await db.query(`select score from personal_records where user_id=$1 and pr_key=$2`, [U.owner, `e:${sq}:1`])).rows[0].score == 102.5);
+await expectErr('вес 500 кг — неверный результат', log(U.coach, wodSq.id, 'RX', 500));
+
+// Кап: результат в повторах, без PR
+const rc = await log(U.coach, wod.id, 'Scaled', 150, { capped: true });
+ok('кап: без PR и без первого замера', !rc.is_pr && !rc.baseline);
+const lb = (await as(U.ath, `select user_id, place, scale from wod_leaderboard where wod_id=$1 order by scale, place`, [wod.id])).rows;
+ok('рейтинг: RX и Scaled — отдельные доски', lb.length === 2 && lb.every(x => Number(x.place) === 1));
+
+// Серия: цель 2 → после 2-й тренировки недели серия +1 и бонус
+await db.query(`update profiles set week_goal = 2 where id = $1`, [U.owner]);
+const wodE = (await as(U.coach, `select * from create_wod(p_gym => $1, p_date => $2::date, p_title => 'Engine', p_format => 'amrap', p_score_type => 'rounds_reps', p_description => 'x')`, [gym.id, await days(-1)])).rows[0];
+const re = await log(U.owner, wodE.id, 'RX', 5012);
+ok('цель недели выполнена: серия 1 и бонус серии +5', re.streak_up && re.streak === 1 && re.xp_items.some(i => i.reason === 'streak' && i.amount === 5));
+ok('пост «серия» в ленте', (await db.query(`select count(*)::int c from feed_items where kind='streak' and user_id=$1`, [U.owner])).rows[0].c === 1);
+
+// roll_week: пропуск двух недель — заморозка, потом обнуление
+await db.query(`update user_stats set week_start = bishkek_week_start() - 14, week_workouts = 0, streak_weeks = 3, freezes = 1 where user_id = $1`, [U.coach]);
+await db.query(`select roll_week($1)`, [U.coach]);
+const rw = (await db.query(`select streak_weeks, freezes, week_start = bishkek_week_start() cur from user_stats where user_id=$1`, [U.coach])).rows[0];
+ok('2 пропущенные недели: заморозка потрачена, серия обнулена', rw.streak_weeks === 0 && rw.freezes === 0 && rw.cur);
+await db.query(`update user_stats set week_start = bishkek_week_start() - 7, week_workouts = 5, streak_weeks = 3, freezes = 0 where user_id = $1`, [U.coach]);
+await db.query(`select roll_week($1)`, [U.coach]);
+ok('выполненная прошлая неделя: серия сохраняется', (await db.query(`select streak_weeks from user_stats where user_id=$1`, [U.coach])).rows[0].streak_weeks === 3);
+
+// delete_wod
+await expectErr('нельзя удалить WOD с результатами', as(U.coach, `select delete_wod($1)`, [wod.id]));
+await expectErr('атлет не может удалить WOD', as(U.ath, `select delete_wod($1)`, [wodOld.id]));
+await as(U.coach, `select delete_wod($1)`, [wodOld.id]);
+ok('тренер удалил пустой WOD', (await db.query(`select count(*)::int c from wods where id=$1`, [wodOld.id])).rows[0].c === 0);

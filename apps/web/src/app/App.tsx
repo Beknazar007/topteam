@@ -8,6 +8,7 @@ import { TodayPage } from '../features/today/TodayPage';
 import { FeedPage } from '../features/feed/FeedPage';
 import { LeaderboardPage } from '../features/leaderboard/LeaderboardPage';
 import { ProfilePage } from '../features/profile/ProfilePage';
+import { NewWodPage } from '../features/wod/NewWodPage';
 
 export function App() {
   return (
@@ -17,6 +18,7 @@ export function App() {
       <Route element={<RequireAuth />}>
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route element={<RequireOnboarded />}>
+          <Route path="/wod/new" element={<NewWodPage />} />
           <Route element={<AppLayout />}>
             <Route index element={<TodayPage />} />
             <Route path="feed" element={<FeedPage />} />

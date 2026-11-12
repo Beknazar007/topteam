@@ -32,6 +32,12 @@ export function errorText(e: unknown): string {
     not_authenticated: 'Нужно войти заново',
     forbidden: 'Недостаточно прав',
     invalid_date: 'Неверная дата',
+    already_logged: 'Ты уже записал результат этого WOD',
+    wod_closed: 'Запись закрыта: WOD старше 3 дней',
+    wod_not_found: 'WOD не найден',
+    invalid_score: 'Проверь результат — значение выглядит неверно',
+    wod_has_results: 'Нельзя удалить: уже есть результаты',
+    invalid_benchmark: 'Бенчмарк не найден',
   };
   for (const [k, v] of Object.entries(map)) if (msg.includes(k)) return v;
   return 'Что-то пошло не так. Попробуй ещё раз.';
