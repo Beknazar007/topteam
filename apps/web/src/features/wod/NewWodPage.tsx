@@ -96,7 +96,7 @@ export function NewWodPage() {
   };
 
   return (
-    <div className="mx-auto max-w-md px-4 pb-10 pt-5">
+    <div className="pt-safe-5 mx-auto max-w-md px-4 pb-10 md:max-w-xl">
       <div className="mb-4 flex items-center justify-between">
         <button onClick={() => nav(-1)} className="text-sm font-bold text-muted">
           ← Назад

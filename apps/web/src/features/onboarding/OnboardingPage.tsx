@@ -44,7 +44,7 @@ export function OnboardingPage() {
   if (gym && profile.sex) return <Navigate to="/" replace />;
 
   return (
-    <div className="mx-auto min-h-full max-w-md px-4 pb-10 pt-8">
+    <div className="pt-safe-5 mx-auto min-h-full max-w-md px-4 pb-10 md:pt-16">
       <div className="mb-1 text-sm font-bold text-muted">Привет, {profile.display_name} 👋</div>
       {!gym ? <GymStep onDone={refresh} initialError={joinError} /> : <ProfileStep onDone={refresh} />}
     </div>

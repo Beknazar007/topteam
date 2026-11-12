@@ -57,7 +57,7 @@ export function ProfileView({ userId, actions }: { userId: string; actions?: Rea
 
       <LevelBar xp={stats?.xp ?? 0} streak={stats?.streak_weeks ?? 0} />
 
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         {tiles.map(([label, value]) => (
           <div key={label} className="card py-3">
             <div className="num text-[22px] font-black">{value}</div>
@@ -77,7 +77,7 @@ export function ProfileView({ userId, actions }: { userId: string; actions?: Rea
             .map((p) => ({ ...p, ...prLabel(p.pr_key) }))
             .sort((x, y) => x.name.localeCompare(y.name))
             .map((p) => (
-              <div key={p.pr_key} className="flex items-center justify-between py-2.5">
+              <div key={p.pr_key} className="flex items-center justify-between gap-3 py-2.5">
                 <div>
                   <div className="font-bold">{p.name}</div>
                   <div className="text-[12px] text-muted">
@@ -93,7 +93,7 @@ export function ProfileView({ userId, actions }: { userId: string; actions?: Rea
       <div className="h-section">
         Бейджи · {earned.size}/{badges.length}
       </div>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">
         {badges.map((b) => {
           const got = earned.has(b.code);
           return (
@@ -117,7 +117,7 @@ export function ProfileView({ userId, actions }: { userId: string; actions?: Rea
       ) : (
         <div className="card divide-y divide-line py-1">
           {history.map((h) => (
-            <div key={h.id} className="flex items-center justify-between py-2.5">
+            <div key={h.id} className="flex items-center justify-between gap-3 py-2.5">
               <div className="min-w-0">
                 <div className="truncate font-bold">{h.wods?.title}</div>
                 <div className="text-[12px] text-muted">

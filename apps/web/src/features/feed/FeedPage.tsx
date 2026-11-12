@@ -75,10 +75,46 @@ function FeedCard({ item, fired: firedInit, myId }: { item: FeedItem; fired: boo
     setFireCount(r.fire_count);
   };
 
+  const fireBtn = (small: boolean) => (
+    <button
+      onClick={toggleFire}
+      disabled={own}
+      className={`flex shrink-0 items-center gap-1.5 rounded-xl font-bold transition-transform active:scale-95 ${
+        small ? 'h-9 px-2.5 text-sm' : 'h-10 px-3'
+      } ${isFired ? 'bg-accent/20 text-accent' : 'bg-surface2 text-muted'} ${own ? 'opacity-70' : ''}`}
+      aria-pressed={isFired}
+      aria-label="Поддержать 🔥"
+    >
+      🔥 <span className="num">{count || ''}</span>
+    </button>
+  );
+
+  // Бейдж / уровень / серия — компактной строкой, чтобы не забивать ленту
+  if (item.kind !== 'result') {
+    const label =
+      item.kind === 'badge'
+        ? `получает бейдж ${String(p.emoji)} «${String(p.name)}»`
+        : item.kind === 'level'
+          ? `▲ уровень ${String(p.level)} · ${levelTitle(Number(p.level))}`
+          : `🔥 серия ${String(p.weeks)} нед. — цель недели выполнена`;
+    return (
+      <div className="card mb-2 flex items-center gap-3 py-3">
+        <Link to={own ? '/profile' : `/athlete/${item.user_id}`} className="shrink-0">
+          <Avatar name={name} url={item.profiles?.avatar_url} size={34} />
+        </Link>
+        <div className="min-w-0 flex-1 text-sm leading-snug">
+          <span className="font-bold">{name}</span> <span className="text-muted">{label}</span>
+          <div className="text-[12px] text-muted">{timeAgo(item.created_at)}</div>
+        </div>
+        {fireBtn(true)}
+      </div>
+    );
+  }
+
   return (
     <div className="card mb-3">
       <div className="mb-2.5 flex items-center gap-2.5">
-        <Link to={own ? '/profile' : `/athlete/${item.user_id}`}>
+        <Link to={own ? '/profile' : `/athlete/${item.user_id}`} className="shrink-0">
           <Avatar name={name} url={item.profiles?.avatar_url} size={38} />
         </Link>
         <div className="min-w-0 flex-1">
@@ -105,38 +141,8 @@ function FeedCard({ item, fired: firedInit, myId }: { item: FeedItem; fired: boo
           )}
         </div>
       )}
-      {item.kind === 'badge' && (
-        <div className="flex items-center gap-3 rounded-2xl bg-surface2 px-4 py-3">
-          <span className="text-4xl">{String(p.emoji)}</span>
-          <div>
-            <div className="text-[12px] font-bold uppercase text-muted">Новый бейдж</div>
-            <div className="text-lg font-black">{String(p.name)}</div>
-          </div>
-        </div>
-      )}
-      {item.kind === 'level' && (
-        <div className="rounded-2xl bg-gradient-to-r from-accent/30 to-surface2 px-4 py-3 text-lg font-black">
-          ▲ Уровень {String(p.level)} · {levelTitle(Number(p.level))}
-        </div>
-      )}
-      {item.kind === 'streak' && (
-        <div className="rounded-2xl bg-surface2 px-4 py-3 text-lg font-black">
-          🔥 Серия {String(p.weeks)} нед. — цель недели выполнена
-        </div>
-      )}
-
       <div className="mt-2.5 flex items-center gap-2">
-        <button
-          onClick={toggleFire}
-          disabled={own}
-          className={`flex h-10 items-center gap-1.5 rounded-xl px-3 font-bold transition-transform active:scale-95 ${
-            isFired ? 'bg-accent/20 text-accent' : 'bg-surface2 text-muted'
-          } ${own ? 'opacity-70' : ''}`}
-          aria-pressed={isFired}
-          aria-label="Поддержать 🔥"
-        >
-          🔥 <span className="num">{count || ''}</span>
-        </button>
+        {fireBtn(false)}
         <button
           onClick={() => setShowComments((v) => !v)}
           className="flex h-10 items-center gap-1.5 rounded-xl bg-surface2 px-3 font-bold text-muted"
@@ -212,7 +218,7 @@ function Comments({ itemId, myId }: { itemId: number; myId: string }) {
       ))}
       <div className="flex gap-2">
         <input
-          className="h-11 min-w-0 flex-1 rounded-2xl border border-line bg-surface2 px-3 text-sm outline-none focus:border-accent"
+          className="h-11 min-w-0 flex-1 rounded-2xl border border-line bg-surface2 px-3 text-base outline-none focus:border-accent"
           placeholder="Поддержи словом…"
           maxLength={500}
           value={body}

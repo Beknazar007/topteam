@@ -6,8 +6,8 @@ const tab = ({ isActive }: { isActive: boolean }) =>
 
 export function BottomNav({ onLog }: { onLog: () => void }) {
   return (
-    <nav className="pb-safe fixed inset-x-0 bottom-0 z-10 border-t border-line bg-bg/90 backdrop-blur-md">
-      <div className="mx-auto flex h-[66px] max-w-md items-center justify-around">
+    <nav className="pb-safe fixed inset-x-0 bottom-0 z-10 border-t border-line bg-bg/90 backdrop-blur-md md:hidden">
+      <div className="mx-auto flex h-[66px] max-w-md items-center justify-around px-2">
         <NavLink to="/feed" className={tab}>
           <FeedIcon />
           Лента

@@ -109,9 +109,9 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-full flex-col justify-end bg-[radial-gradient(circle_at_70%_25%,rgba(255,107,44,.35),transparent_55%),radial-gradient(circle_at_20%_60%,rgba(194,24,91,.25),transparent_50%)] px-5 pb-10 pt-8">
+    <div className="flex min-h-[100dvh] flex-col justify-end md:justify-center bg-[radial-gradient(circle_at_70%_25%,rgba(255,107,44,.35),transparent_55%),radial-gradient(circle_at_20%_60%,rgba(194,24,91,.25),transparent_50%)] px-5 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-[calc(2rem+env(safe-area-inset-top))]">
       <div className="mx-auto w-full max-w-md">
-        <h1 className="text-[52px] font-black leading-[0.95] tracking-tight">
+        <h1 className="text-[44px] font-black leading-[0.95] tracking-tight min-[360px]:text-[52px] md:text-[64px]">
           TOP<span className="text-accent">TEAM</span>
         </h1>
         <p className="mt-3 text-[17px] leading-snug text-muted">

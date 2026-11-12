@@ -21,7 +21,10 @@
 html,
 body,
 #root {
-  height: 100%;
+  min-height: 100%;
+}
+#root {
+  min-height: 100dvh;
 }
 
 body {
@@ -44,4 +47,20 @@ body {
 
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
+}
+/* Отступ сверху с учётом «чёлки» iPhone (PWA со статус-баром black-translucent) */
+.pt-safe-5 {
+  padding-top: calc(1.25rem + env(safe-area-inset-top));
+}
+/* Место под нижнее меню + полоса жестов iPhone */
+.pb-nav {
+  padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 768px) {
+  .pt-safe-5 {
+    padding-top: 2rem;
+  }
+  .pb-nav {
+    padding-bottom: 3rem;
+  }
 }

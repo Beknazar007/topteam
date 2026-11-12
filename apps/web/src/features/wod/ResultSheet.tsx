@@ -143,7 +143,7 @@ export function ResultForm({ wod, onDone }: { wod: Wod; onDone: (r: LogResponse)
         className="mb-4 w-full accent-[#ff6b2c]"
       />
       <textarea
-        className="mb-4 min-h-[60px] w-full rounded-2xl border border-line bg-surface2 px-4 py-3 text-sm outline-none focus:border-accent"
+        className="mb-4 min-h-[60px] w-full rounded-2xl border border-line bg-surface2 px-4 py-3 text-base outline-none focus:border-accent"
         placeholder="Заметка: веса, масштабирование, ощущения…"
         maxLength={500}
         value={note}

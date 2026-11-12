@@ -29,8 +29,8 @@ export function InviteCard({ gym }: { gym: Gym }) {
 
   return (
     <div className="card">
-      <div className="mb-3 flex items-center justify-between">
-        <div>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0 flex-1 basis-48">
           <div className="font-extrabold">Пригласить в зал</div>
           <div className="text-[13px] text-muted">QR откроет TopTeam в Telegram и сразу добавит в зал</div>
         </div>
