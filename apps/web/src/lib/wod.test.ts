@@ -1,4 +1,4 @@
-import { addDays, bishkekToday, formatDay } from './wod';
+import { addDays, bishkekToday, formatDay, isLoggable, isRanked, weekStartOf } from './wod';
 
 describe('даты WOD', () => {
   it('сегодня по Бишкеку', () => {
@@ -11,5 +11,18 @@ describe('даты WOD', () => {
   });
   it('formatDay', () => {
     expect(formatDay('2026-11-13')).toBe('ПТ, 13 ноября');
+  });
+});
+
+describe('неделя и блоки', () => {
+  it('weekStartOf → понедельник', () => {
+    expect(weekStartOf('2026-11-19')).toBe('2026-11-16'); // чт
+    expect(weekStartOf('2026-11-22')).toBe('2026-11-16'); // вс
+    expect(weekStartOf('2026-11-16')).toBe('2026-11-16'); // пн
+  });
+  it('разминку не записываем и не ранжируем', () => {
+    expect(isLoggable({ kind: 'warmup' })).toBe(false);
+    expect(isRanked({ kind: 'wod', score_type: 'none' })).toBe(false);
+    expect(isRanked({ kind: 'strength', score_type: 'weight' })).toBe(true);
   });
 });

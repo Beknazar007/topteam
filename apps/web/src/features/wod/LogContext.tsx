@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Sheet } from '../../components/ui/Sheet';
 import { useAuth } from '../../lib/auth';
 import { useMe } from '../../lib/me';
-import { bishkekToday, useRecentWods, useWodResults, type LogResponse, type Wod } from '../../lib/wod';
+import { bishkekToday, isLoggable, useRecentWods, useWodResults, type LogResponse, type Wod } from '../../lib/wod';
 import { Celebration } from './Celebration';
 import { ResultForm } from './ResultSheet';
 
@@ -24,7 +24,7 @@ export function LogProvider({ children }: { children: ReactNode }) {
     (wod?: Wod) => {
       if (!wod) {
         const today = bishkekToday();
-        wod = (wods.data ?? []).find((w) => w.wod_date === today && !results.data?.mine.has(w.id));
+        wod = (wods.data ?? []).find((w) => w.wod_date === today && isLoggable(w) && !results.data?.mine.has(w.id));
       }
       setState({ open: true, wod });
     },
@@ -50,8 +50,8 @@ export function LogProvider({ children }: { children: ReactNode }) {
               {coach ? 'Опубликуй тренировку дня — и зал сможет записывать результаты.' : 'WOD дня ещё не опубликован, или ты уже записал все результаты сегодня.'}
             </p>
             {coach && (
-              <Link to="/wod/new" onClick={close} className="mt-4 inline-block font-bold text-accent">
-                ＋ Новый WOD
+              <Link to="/week" onClick={close} className="mt-4 inline-block font-bold text-accent">
+                📅 План недели
               </Link>
             )}
           </div>

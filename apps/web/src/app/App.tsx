@@ -10,6 +10,7 @@ import { LeaderboardPage } from '../features/leaderboard/LeaderboardPage';
 import { ProfilePage } from '../features/profile/ProfilePage';
 import { NewWodPage } from '../features/wod/NewWodPage';
 import { AthletePage } from '../features/profile/AthletePage';
+import { WeekPage } from '../features/week/WeekPage';
 
 export function App() {
   return (
@@ -26,6 +27,7 @@ export function App() {
             <Route path="leaderboard" element={<LeaderboardPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="athlete/:id" element={<AthletePage />} />
+            <Route path="week" element={<WeekPage />} />
           </Route>
         </Route>
       </Route>

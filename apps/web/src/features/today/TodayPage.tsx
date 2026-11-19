@@ -10,6 +10,8 @@ import {
   bishkekToday,
   FORMAT_LABEL,
   formatDay,
+  isLoggable,
+  KIND_LABEL,
   useMyPrs,
   useRecentWods,
   useWodResults,
@@ -27,12 +29,18 @@ export function TodayPage() {
   const coach = data?.role === 'coach' || data?.role === 'owner';
 
   const wods = useRecentWods(data?.gym?.id);
-  const results = useWodResults((wods.data ?? []).map((w) => w.id), data?.profile.id);
+  const results = useWodResults(
+    (wods.data ?? []).map((w) => w.id),
+    data?.profile.id,
+  );
   const today = bishkekToday();
   const list = wods.data ?? [];
   const todays = list.filter((w) => w.wod_date === today);
-  const upcoming = list.filter((w) => w.wod_date > today).reverse();
-  const missed = list.filter((w) => w.wod_date < today && !results.data?.mine.has(w.id));
+  const missed = list.filter((w) => w.wod_date < today && isLoggable(w) && !results.data?.mine.has(w.id));
+  // Будущие дни: тренер видит все, атлеты — открытые заранее (RLS)
+  const upcomingDays = new Map<string, Wod[]>();
+  for (const w of [...list].reverse())
+    if (w.wod_date > today) upcomingDays.set(w.wod_date, [...(upcomingDays.get(w.wod_date) ?? []), w]);
 
   return (
     <>
@@ -56,22 +64,35 @@ export function TodayPage() {
       </div>
 
       {coach && (
-        <Link
-          to="/wod/new"
-          className="mb-3.5 flex h-12 items-center justify-center rounded-2xl border border-dashed border-accent/60 font-extrabold text-accent"
-        >
-          ＋ Новый WOD
-        </Link>
+        <div className="mb-3.5 grid grid-cols-2 gap-2">
+          <Link to="/week" className="flex h-12 items-center justify-center rounded-2xl bg-surface2 font-extrabold">
+            📅 План недели
+          </Link>
+          <Link
+            to={`/wod/new?date=${today}`}
+            className="flex h-12 items-center justify-center rounded-2xl border border-dashed border-accent/60 font-extrabold text-accent"
+          >
+            ＋ Блок
+          </Link>
+        </div>
       )}
 
       {wods.isLoading ? (
         <Spinner />
       ) : todays.length ? (
-        todays.map((w) => <WodCard key={w.id} wod={w} mine={results.data?.mine.get(w.id)} count={results.data?.counts.get(w.id) ?? 0} coach={coach} />)
+        todays.map((w) => (
+          <WodCard
+            key={w.id}
+            wod={w}
+            mine={results.data?.mine.get(w.id)}
+            count={results.data?.counts.get(w.id) ?? 0}
+            coach={coach}
+          />
+        ))
       ) : (
-        <EmptyState emoji="🏋️" title="WOD дня ещё не опубликован">
+        <EmptyState emoji="🏋️" title="Тренировка дня ещё не опубликована">
           {coach
-            ? 'Нажми «＋ Новый WOD» — тренировка появится у всего зала.'
+            ? 'Добавь блоки (Разминка, Сила, WOD…) — или распиши всю неделю в «План недели».'
             : 'Как только тренер добавит тренировку, она появится здесь.'}
         </EmptyState>
       )}
@@ -85,11 +106,27 @@ export function TodayPage() {
         </>
       )}
 
-      {upcoming.length > 0 && coach && (
+      {upcomingDays.size > 0 && (
         <>
-          <div className="h-section">Запланировано</div>
-          {upcoming.map((w) => (
-            <WodCard key={w.id} wod={w} count={0} coach={coach} compact future />
+          <div className="h-section">Дальше на неделе</div>
+          {[...upcomingDays.entries()].slice(0, 7).map(([date, blocks]) => (
+            <div key={date} className="card mb-2 py-3">
+              <div className="mb-1 flex items-center justify-between text-[12px] font-bold uppercase tracking-[0.08em] text-muted">
+                <span>{formatDay(date)}</span>
+                {coach && <span>{blocks.some((b) => b.show_early) ? '👁 видно атлетам' : '🙈 скрыто до дня'}</span>}
+              </div>
+              {blocks.map((b) => (
+                <div key={b.id} className="flex gap-2 text-sm">
+                  <span className="w-[72px] shrink-0 font-bold text-muted">{KIND_LABEL[b.kind]}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="font-bold">{b.title}</span>
+                    {b.description && (
+                      <span className="block whitespace-pre-wrap text-[13px] text-muted">{b.description}</span>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
           ))}
         </>
       )}
@@ -134,8 +171,12 @@ function WodCard({
   return (
     <div className="card mb-3 overflow-hidden">
       <div className="mb-1 flex items-center justify-between text-[12px] font-bold uppercase tracking-[0.08em] text-muted">
-        <span>{formatDay(wod.wod_date)} · WOD</span>
-        <span className="rounded-lg bg-surface2 px-2 py-0.5 text-accent">{FORMAT_LABEL[wod.format]}</span>
+        <span>
+          {formatDay(wod.wod_date)} · {KIND_LABEL[wod.kind]}
+        </span>
+        {isLoggable(wod) && wod.format !== 'other' && (
+          <span className="rounded-lg bg-surface2 px-2 py-0.5 text-accent">{FORMAT_LABEL[wod.format]}</span>
+        )}
       </div>
       <div className="text-[24px] font-black uppercase leading-tight tracking-tight">{wod.title}</div>
       {!compact && <div className="mt-1.5 whitespace-pre-wrap text-[15px] leading-snug">{wod.description}</div>}
@@ -156,6 +197,7 @@ function WodCard({
       )}
 
       {!future &&
+        isLoggable(wod) &&
         (mine ? (
           <div className="mt-3 flex items-center justify-between rounded-2xl bg-surface2 px-4 py-3">
             <span className="text-sm font-bold text-muted">Твой результат · {mine.scale}</span>
@@ -174,7 +216,7 @@ function WodCard({
         ))}
 
       <div className="mt-2.5 flex items-center justify-between text-[13px] text-muted">
-        <span>{future ? 'Появится у атлетов в этот день' : `Уже записали: ${count}`}</span>
+        <span>{future ? 'Появится у атлетов в этот день' : isLoggable(wod) ? `Уже записали: ${count}` : ''}</span>
         {coach && count === 0 && (
           <button onClick={remove} className="font-semibold text-muted underline">
             Удалить

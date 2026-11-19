@@ -4,6 +4,22 @@ import type { Scale } from './me';
 import type { ScoreType } from './format';
 
 export type WodFormat = 'for_time' | 'amrap' | 'emom' | 'max_weight' | 'other';
+export type WodKind = 'warmup' | 'skill' | 'strength' | 'wod' | 'accessory' | 'cooldown';
+
+export const KIND_LABEL: Record<WodKind, string> = {
+  warmup: 'Разминка',
+  skill: 'Техника',
+  strength: 'Сила',
+  wod: 'WOD',
+  accessory: 'Доп.',
+  cooldown: 'Заминка',
+};
+export const KINDS = Object.keys(KIND_LABEL) as WodKind[];
+
+/** В блок можно записать результат (не разминка/заминка). */
+export const isLoggable = (w: { kind: WodKind }) => w.kind !== 'warmup' && w.kind !== 'cooldown';
+/** Блок участвует в рейтинге. */
+export const isRanked = (w: { kind: WodKind; score_type: string }) => isLoggable(w) && w.score_type !== 'none';
 
 export interface Wod {
   id: string;
@@ -18,6 +34,9 @@ export interface Wod {
   exercise_id: number | null;
   rep_max: number | null;
   coach_note: string | null;
+  kind: WodKind;
+  position: number;
+  show_early: boolean;
   created_at: string;
 }
 export interface Result {
@@ -108,6 +127,7 @@ export function useRecentWods(gymId: string | undefined) {
         .gte('wod_date', addDays(today, -RESULT_MAX_AGE_DAYS))
         .lte('wod_date', addDays(today, 14))
         .order('wod_date', { ascending: false })
+        .order('position')
         .order('created_at');
       if (error) throw error;
       return data as Wod[];
@@ -168,6 +188,33 @@ export function useExercises() {
       const { data, error } = await supabase.from('exercises').select('*').order('id');
       if (error) throw error;
       return data as Exercise[];
+    },
+  });
+}
+
+/** Понедельник недели, содержащей date (YYYY-MM-DD). */
+export function weekStartOf(date: string): string {
+  const d = new Date(date + 'T00:00:00Z');
+  return addDays(date, -((d.getUTCDay() + 6) % 7));
+}
+
+/** Блоки зала за неделю (Пн..Вс), по дням и порядку. */
+export function useWeekWods(gymId: string | undefined, weekStart: string) {
+  return useQuery({
+    queryKey: ['wods', gymId, 'week', weekStart],
+    enabled: Boolean(gymId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('wods')
+        .select('*')
+        .eq('gym_id', gymId!)
+        .gte('wod_date', weekStart)
+        .lte('wod_date', addDays(weekStart, 6))
+        .order('wod_date')
+        .order('position')
+        .order('created_at');
+      if (error) throw error;
+      return data as Wod[];
     },
   });
 }

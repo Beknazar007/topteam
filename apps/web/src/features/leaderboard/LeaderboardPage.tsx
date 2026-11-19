@@ -10,7 +10,7 @@ import { useMe, type Scale } from '../../lib/me';
 import { rankRows } from '../../lib/rank';
 import { useLeaderboard, type BoardRow } from '../../lib/social';
 import { errorText, supabase } from '../../lib/supabase';
-import { bishkekToday, formatDay, useRecentWods } from '../../lib/wod';
+import { bishkekToday, formatDay, isRanked, KIND_LABEL, useRecentWods } from '../../lib/wod';
 
 const MEDAL = ['', '🥇', '🥈', '🥉'];
 
@@ -19,7 +19,7 @@ export function LeaderboardPage() {
   const qc = useQueryClient();
   const today = bishkekToday();
   const wods = useRecentWods(me.data?.gym?.id);
-  const past = (wods.data ?? []).filter((w) => w.wod_date <= today);
+  const past = (wods.data ?? []).filter((w) => w.wod_date <= today && isRanked(w));
   const [wodId, setWodId] = useState<string | null>(null);
   const wod = past.find((w) => w.id === wodId) ?? past[0];
   const [scale, setScale] = useState<Scale>(me.data?.profile.default_scale ?? 'RX');
@@ -47,7 +47,8 @@ export function LeaderboardPage() {
     if (!confirm(msg)) return;
     const { error } = await supabase.rpc('delete_result', { p_result: r.result_id });
     if (error) return alert(errorText(error));
-    for (const k of ['leaderboard', 'wod-results', 'me', 'prs', 'feed', 'athlete']) void qc.invalidateQueries({ queryKey: [k] });
+    for (const k of ['leaderboard', 'wod-results', 'me', 'prs', 'feed', 'athlete'])
+      void qc.invalidateQueries({ queryKey: [k] });
   };
 
   return (
@@ -69,7 +70,9 @@ export function LeaderboardPage() {
                   onClick={() => setWodId(w.id)}
                   className={`shrink-0 rounded-xl px-3 py-2 text-left ${w.id === wod.id ? 'bg-accent text-white' : 'bg-surface2'}`}
                 >
-                  <div className="text-[11px] font-bold uppercase opacity-80">{w.wod_date === today ? 'Сегодня' : formatDay(w.wod_date)}</div>
+                  <div className="text-[11px] font-bold uppercase opacity-80">
+                    {w.wod_date === today ? 'Сегодня' : formatDay(w.wod_date)} · {KIND_LABEL[w.kind]}
+                  </div>
                   <div className="max-w-[140px] truncate text-sm font-black">{w.title}</div>
                 </button>
               ))}
@@ -114,14 +117,19 @@ export function LeaderboardPage() {
                   }`}
                 >
                   <div className="num w-7 text-center text-lg font-black">{MEDAL[r.place] || r.place}</div>
-                  <Link to={r.user_id === myId ? '/profile' : `/athlete/${r.user_id}`} className="flex min-w-0 flex-1 items-center gap-2.5">
+                  <Link
+                    to={r.user_id === myId ? '/profile' : `/athlete/${r.user_id}`}
+                    className="flex min-w-0 flex-1 items-center gap-2.5"
+                  >
                     <Avatar name={r.display_name} url={r.avatar_url} size={36} />
                     <div className="min-w-0">
                       <div className="truncate font-bold">{r.display_name}</div>
                       {r.is_pr && <div className="text-[12px] font-bold text-gold">🏆 Личный рекорд</div>}
                     </div>
                   </Link>
-                  <div className="num text-right text-lg font-black">{formatScore(wod.score_type, r.score, r.capped)}</div>
+                  <div className="num text-right text-lg font-black">
+                    {formatScore(wod.score_type, r.score, r.capped)}
+                  </div>
                   {(coach || r.user_id === myId) && (
                     <button onClick={() => remove(r)} aria-label="Удалить результат" className="pl-1 text-muted">
                       ⋯

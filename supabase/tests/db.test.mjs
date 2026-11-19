@@ -47,7 +47,10 @@ const fran = (await db.query(`select id from benchmarks where name='Fran'`)).row
 const today = (await db.query(`select bishkek_today()::text d`)).rows[0].d;
 const wod = (await as(U.coach, `select * from create_wod(p_gym => $1, p_date => $2::date, p_benchmark_id => $3)`, [gym.id, today, fran])).rows[0];
 ok('create_wod из бенчмарка: ' + wod.title + ' / ' + wod.format + ' / ' + wod.score_type + ' / cap ' + wod.time_cap_sec, wod.title === 'Fran' && wod.score_type === 'time' && wod.time_cap_sec === 600);
-ok('уведомления: владелец и атлет (не тренер)', (await db.query(`select count(*)::int c from notifications where kind='new_wod'`)).rows[0].c === 2);
+ok('create_wod сам не шлёт уведомления', (await db.query(`select count(*)::int c from notifications where kind='new_wod'`)).rows[0].c === 0);
+ok('notify_today: только что созданный день ещё не рассылается', (await db.query(`select notify_today() n`)).rows[0].n === 0);
+ok('notify_today: владелец и атлет (не автор-тренер)', (await db.query(`select notify_today('0 seconds') n`)).rows[0].n === 2);
+ok('уведомление о дне — одно', (await db.query(`select notify_today('0 seconds') n`)).rows[0].n === 0);
 await expectErr('атлет не может создать WOD', as(U.ath, `select create_wod(p_gym => $1, p_date => $2::date, p_title => 'x', p_format => 'other', p_score_type => 'none', p_description => 'x')`, [gym.id, today]));
 await expectErr('max_weight без упражнения', as(U.coach, `select create_wod(p_gym => $1, p_date => $2::date, p_title => '1RM', p_format => 'max_weight', p_description => '')`, [gym.id, today]));
 
@@ -210,3 +213,39 @@ ok(`очередь: забрано ${claimed.length}, у всех есть tg_id
 ok('повторно уже не забираются', (await db.query(`select count(*)::int c from claim_notifications(100)`)).rows[0].c === 0);
 await expectErr('атлет не может забрать очередь', as(U.ath, `select * from claim_notifications(1)`));
 await expectErr('атлет не может запустить итоги дня', as(U.ath, `select daily_podium()`));
+
+// ===== План недели: блоки, видимость, копирование, «один день = одна тренировка» =====
+const d1 = await days(1), d2 = await days(2);
+const warm = (await as(U.coach, `select * from create_wod(p_gym => $1, p_date => $2::date, p_title => 'Разминка', p_format => 'other', p_score_type => 'none', p_description => '3 раунда', p_kind => 'warmup')`, [gym.id, d1])).rows[0];
+const str = (await as(U.coach, `select * from create_wod(p_gym => $1, p_date => $2::date, p_title => 'Deadlift 3RM', p_format => 'max_weight', p_exercise_id => $3, p_rep_max => 3, p_description => '')`, [gym.id, d1, sq])).rows[0];
+ok('блоки дня: позиции 0,1; силовая → kind strength', warm.position === 0 && str.position === 1 && str.kind === 'strength');
+ok('RLS: атлет не видит завтрашний день', (await as(U.ath, `select count(*)::int c from wods where wod_date = $1::date`, [d1])).rows[0].c === 0);
+ok('тренер видит завтрашний день', (await as(U.coach, `select count(*)::int c from wods where wod_date = $1::date`, [d1])).rows[0].c === 2);
+await as(U.coach, `select set_day_visibility($1, $2::date, true)`, [gym.id, d1]);
+ok('день открыт заранее — атлет видит', (await as(U.ath, `select count(*)::int c from wods where wod_date = $1::date`, [d1])).rows[0].c === 2);
+const wod3 = (await as(U.coach, `select * from create_wod(p_gym => $1, p_date => $2::date, p_benchmark_id => $3)`, [gym.id, d1, fran])).rows[0];
+ok('новый блок открытого дня тоже открыт, позиция 2', wod3.show_early && wod3.position === 2);
+await as(U.coach, `select move_wod($1, -1)`, [wod3.id]);
+const order = (await as(U.coach, `select title from wods where gym_id=$1 and wod_date=$2::date order by position, created_at`, [gym.id, d1])).rows.map(r => r.title).join(',');
+ok('move_wod: Fran поднялся над Deadlift (' + order + ')', order === 'Разминка,Fran,Deadlift 3RM');
+await expectErr('атлет не может менять видимость', as(U.ath, `select set_day_visibility($1, $2::date, false)`, [gym.id, d1]));
+const upd = (await as(U.coach, `select * from update_wod($1, 'Разминка+', 'новое', 'заметка', null, 'warmup')`, [warm.id])).rows[0];
+ok('update_wod меняет текст', upd.title === 'Разминка+' && upd.coach_note === 'заметка');
+
+const wk = (await db.query(`select bishkek_week_start()::text d`)).rows[0].d;
+const nextWk = (await db.query(`select (bishkek_week_start() + 7)::text d`)).rows[0].d;
+const copied = (await as(U.coach, `select copy_week($1, $2::date, $3::date) n`, [gym.id, wk, nextWk])).rows[0].n;
+const thisWeekCount = (await db.query(`select count(*)::int c from wods where gym_id=$1 and wod_date between $2::date and $2::date + 6`, [gym.id, wk])).rows[0].c;
+ok(`copy_week скопировал блоки недели (${copied} из ${thisWeekCount})`, copied > 0 && copied <= thisWeekCount);
+ok('повторное копирование — в непустые дни не пишет', (await as(U.coach, `select copy_week($1, $2::date, $3::date) n`, [gym.id, wk, nextWk])).rows[0].n === 0);
+await expectErr('атлет не может копировать неделю', as(U.ath, `select copy_week($1, $2::date, $3::date)`, [gym.id, wk, nextWk]));
+
+// Один день = одна тренировка: сила + WOD в один день
+const today0 = await days(0);
+const strT = (await as(U.coach, `select * from create_wod(p_gym => $1, p_date => $2::date, p_title => 'Front Squat 5RM', p_format => 'max_weight', p_exercise_id => $3, p_rep_max => 5, p_description => '')`, [gym.id, today0, sq])).rows[0];
+const warmT = (await as(U.coach, `select * from create_wod(p_gym => $1, p_date => $2::date, p_title => 'Разминка', p_format => 'other', p_score_type => 'none', p_description => 'x', p_kind => 'warmup')`, [gym.id, today0])).rows[0];
+await expectErr('в разминку результат не записывается', log(U.coach, warmT.id, 'RX', 1));
+const wBefore = (await db.query(`select workouts from user_stats where user_id=$1`, [U.coach])).rows[0].workouts;
+const rcs = await log(U.coach, strT.id, 'RX', 90);
+ok('второй блок дня: без «Тренировка», но +10 «Ещё блок дня»', !rcs.xp_items.some(i => i.reason === 'workout') && rcs.xp_items.some(i => i.reason === 'block' && i.amount === 10));
+ok('тренировок в статистике не прибавилось', (await db.query(`select workouts from user_stats where user_id=$1`, [U.coach])).rows[0].workouts === wBefore);

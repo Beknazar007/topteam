@@ -42,6 +42,8 @@ export function errorText(e: unknown): string {
     rate_limited: 'Слишком часто — подожди минутку',
     own_item: 'Себе 🔥 поставить нельзя',
     cannot_change_own_role: 'Свою роль менять нельзя',
+    not_loggable: 'В этот блок результат не записывается',
+    invalid_kind: 'Неверный тип блока',
   };
   for (const [k, v] of Object.entries(map)) if (msg.includes(k)) return v;
   return 'Что-то пошло не так. Попробуй ещё раз.';

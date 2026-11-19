@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useMe } from '../../lib/me';
 import { BoardIcon, FeedIcon, PlusIcon, ProfileIcon, TodayIcon } from './icons';
 
 const item = ({ isActive }: { isActive: boolean }) =>
@@ -8,6 +9,8 @@ const item = ({ isActive }: { isActive: boolean }) =>
 
 /** Боковое меню для планшетов и компьютеров (≥ md). */
 export function SideNav({ onLog }: { onLog: () => void }) {
+  const me = useMe();
+  const coach = me.data?.role === 'coach' || me.data?.role === 'owner';
   return (
     <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-line bg-bg px-4 py-6 md:flex">
       <div className="mb-8 px-4 text-[26px] font-black tracking-tight">
@@ -26,6 +29,11 @@ export function SideNav({ onLog }: { onLog: () => void }) {
         <NavLink to="/profile" className={item}>
           <ProfileIcon /> Профиль
         </NavLink>
+        {coach && (
+          <NavLink to="/week" className={item}>
+            <span className="w-6 text-center text-lg">📅</span> План недели
+          </NavLink>
+        )}
       </nav>
       <button
         onClick={onLog}

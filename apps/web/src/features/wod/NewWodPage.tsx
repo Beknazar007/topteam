@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components/ui/Button';
 import { Segmented } from '../../components/ui/Segmented';
@@ -7,7 +7,18 @@ import { Spinner } from '../../components/ui/Spinner';
 import { useMe } from '../../lib/me';
 import { errorText, supabase } from '../../lib/supabase';
 import type { ScoreType } from '../../lib/format';
-import { addDays, bishkekToday, formatDay, useBenchmarks, useExercises, type Benchmark, type WodFormat } from '../../lib/wod';
+import {
+  addDays,
+  bishkekToday,
+  formatDay,
+  KIND_LABEL,
+  KINDS,
+  useBenchmarks,
+  useExercises,
+  type Benchmark,
+  type WodFormat,
+  type WodKind,
+} from '../../lib/wod';
 
 const input =
   'w-full rounded-2xl border border-line bg-surface2 px-4 py-3 text-base font-semibold outline-none focus:border-accent';
@@ -28,8 +39,12 @@ export function NewWodPage() {
   const benchmarks = useBenchmarks();
   const exercises = useExercises();
   const today = bishkekToday();
+  const [params] = useSearchParams();
+  const fromWeek = params.get('from') === 'week';
+  const paramDate = params.get('date');
 
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) ? paramDate : today);
+  const [kind, setKind] = useState<WodKind>('wod');
   const [mode, setMode] = useState<Mode>('benchmark');
   const [benchmarkId, setBenchmarkId] = useState<number | null>(null);
   const [title, setTitle] = useState('');
@@ -55,22 +70,36 @@ export function NewWodPage() {
   if (!me.data) return <Spinner />;
   if (me.data.role !== 'coach' && me.data.role !== 'owner') return <Navigate to="/" replace />;
 
+  const noScore = kind === 'warmup' || kind === 'cooldown';
+  const pickKind = (k: WodKind) => {
+    setKind(k);
+    if (k === 'strength') setMode('strength');
+    else if (k === 'warmup' || k === 'cooldown' || k === 'skill' || k === 'accessory') {
+      setMode('custom');
+      setFormat('other');
+      setScoreType('none');
+    } else if (mode === 'strength') setMode('benchmark');
+  };
+
   const capSec = capMin.trim() ? Math.round(Number(capMin.replace(',', '.')) * 60) : null;
+  const effMode: Mode = noScore ? 'custom' : mode;
   const valid =
-    mode === 'benchmark'
+    effMode === 'benchmark'
       ? Boolean(bm)
-      : mode === 'strength'
+      : effMode === 'strength'
         ? Boolean(ex)
-        : title.trim().length > 0 && description.trim().length > 0 && (capSec === null || (capSec >= 60 && capSec <= 10800));
+        : title.trim().length > 0 &&
+          description.trim().length > 0 &&
+          (capSec === null || (capSec >= 60 && capSec <= 10800));
 
   const publish = async () => {
     setBusy(true);
     setError(null);
-    const base = { p_gym: me.data!.gym!.id, p_date: date, p_coach_note: note.trim() || null };
+    const base = { p_gym: me.data!.gym!.id, p_date: date, p_coach_note: note.trim() || null, p_kind: kind };
     const args =
-      mode === 'benchmark'
+      effMode === 'benchmark'
         ? { ...base, p_benchmark_id: benchmarkId }
-        : mode === 'strength'
+        : effMode === 'strength'
           ? {
               ...base,
               p_title: `${ex!.name} ${repMax}RM`,
@@ -84,7 +113,7 @@ export function NewWodPage() {
               ...base,
               p_title: title.trim(),
               p_format: format,
-              p_score_type: scoreType,
+              p_score_type: noScore ? 'none' : scoreType,
               p_description: description.trim(),
               p_time_cap_sec: capSec,
             };
@@ -92,7 +121,7 @@ export function NewWodPage() {
     setBusy(false);
     if (e) return setError(errorText(e));
     await qc.invalidateQueries({ queryKey: ['wods'] });
-    nav('/', { replace: true });
+    nav(fromWeek ? '/week' : '/', { replace: true });
   };
 
   return (
@@ -101,7 +130,7 @@ export function NewWodPage() {
         <button onClick={() => nav(-1)} className="text-sm font-bold text-muted">
           ← Назад
         </button>
-        <h1 className="text-[20px] font-black">Новый WOD</h1>
+        <h1 className="text-[20px] font-black">Новый блок</h1>
         <span className="w-12" />
       </div>
 
@@ -119,29 +148,49 @@ export function NewWodPage() {
         type="date"
         className={`${input} mt-2`}
         value={date}
-        min={addDays(today, -7)}
-        max={addDays(today, 14)}
+        min={addDays(today, -14)}
+        max={addDays(today, 60)}
         onChange={(e) => e.target.value && setDate(e.target.value)}
       />
       <div className="mt-1 text-[13px] text-muted">{formatDay(date)}</div>
 
-      <Label>Тип</Label>
-      <Segmented
-        value={mode}
-        onChange={setMode}
-        options={[
-          { value: 'benchmark', label: 'Бенчмарк' },
-          { value: 'custom', label: 'Свой' },
-          { value: 'strength', label: 'Силовая' },
-        ]}
-      />
+      <Label>Блок</Label>
+      <div className="grid grid-cols-3 gap-1.5">
+        {KINDS.map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => pickKind(k)}
+            className={`h-11 rounded-xl text-sm font-extrabold ${kind === k ? 'bg-accent text-white' : 'bg-surface2 text-muted'}`}
+          >
+            {KIND_LABEL[k]}
+          </button>
+        ))}
+      </div>
 
-      {mode === 'benchmark' && (
+      {!noScore && (
+        <>
+          <Label>Тип</Label>
+          <Segmented
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: 'benchmark', label: 'Бенчмарк' },
+              { value: 'custom', label: 'Свой' },
+              { value: 'strength', label: 'Силовая' },
+            ]}
+          />
+        </>
+      )}
+
+      {effMode === 'benchmark' && (
         <div className="mt-3">
           {benchmarks.isLoading && <Spinner />}
           {grouped.map(([cat, list]) => (
             <div key={cat} className="mb-3">
-              <div className="mb-1.5 text-[12px] font-bold uppercase tracking-wider text-muted">{CATEGORY[cat] ?? cat}</div>
+              <div className="mb-1.5 text-[12px] font-bold uppercase tracking-wider text-muted">
+                {CATEGORY[cat] ?? cat}
+              </div>
               <div className="flex flex-wrap gap-1.5">
                 {list.map((b) => (
                   <button
@@ -159,28 +208,38 @@ export function NewWodPage() {
             <div className="card">
               <div className="font-black">{bm.name}</div>
               <div className="mt-1 whitespace-pre-wrap text-sm text-muted">{bm.description}</div>
-              {bm.time_cap_sec && <div className="mt-1 text-[13px] text-muted">Тайм-кап {bm.time_cap_sec / 60} мин</div>}
+              {bm.time_cap_sec && (
+                <div className="mt-1 text-[13px] text-muted">Тайм-кап {bm.time_cap_sec / 60} мин</div>
+              )}
             </div>
           )}
         </div>
       )}
 
-      {mode === 'custom' && (
+      {effMode === 'custom' && (
         <div className="mt-3 grid gap-3">
-          <input className={input} placeholder="Название (напр. «Пятничный чиппер»)" maxLength={80} value={title} onChange={(e) => setTitle(e.target.value)} />
-          <Segmented
-            value={format}
-            onChange={(f) => {
-              setFormat(f);
-              setScoreType(DEFAULT_SCORE[f]);
-            }}
-            options={[
-              { value: 'for_time', label: 'For Time' },
-              { value: 'amrap', label: 'AMRAP' },
-              { value: 'emom', label: 'EMOM' },
-              { value: 'other', label: 'Other' },
-            ]}
+          <input
+            className={input}
+            placeholder="Название (напр. «Пятничный чиппер»)"
+            maxLength={80}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
           />
+          {!noScore && (
+            <Segmented
+              value={format}
+              onChange={(f) => {
+                setFormat(f);
+                setScoreType(DEFAULT_SCORE[f]);
+              }}
+              options={[
+                { value: 'for_time', label: 'For Time' },
+                { value: 'amrap', label: 'AMRAP' },
+                { value: 'emom', label: 'EMOM' },
+                { value: 'other', label: 'Other' },
+              ]}
+            />
+          )}
           <textarea
             className={`${input} min-h-[140px]`}
             placeholder={'Упражнения, по строке на каждое:\n21-15-9\nThrusters 43/30 кг\nPull-ups'}
@@ -188,29 +247,37 @@ export function NewWodPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-          <div>
-            <div className="mb-1.5 text-sm font-bold">Как считать результат</div>
-            <select className={input} value={scoreType} onChange={(e) => setScoreType(e.target.value as ScoreType)}>
-              <option value="time">Время</option>
-              <option value="rounds_reps">Раунды + повторы</option>
-              <option value="reps">Повторы</option>
-              <option value="weight">Вес</option>
-              <option value="none">Без счёта (просто отметка)</option>
-            </select>
-          </div>
-          <input
-            className={input}
-            inputMode="decimal"
-            placeholder="Тайм-кап, минут (необязательно)"
-            value={capMin}
-            onChange={(e) => setCapMin(e.target.value)}
-          />
+          {!noScore && (
+            <div>
+              <div className="mb-1.5 text-sm font-bold">Как считать результат</div>
+              <select className={input} value={scoreType} onChange={(e) => setScoreType(e.target.value as ScoreType)}>
+                <option value="time">Время</option>
+                <option value="rounds_reps">Раунды + повторы</option>
+                <option value="reps">Повторы</option>
+                <option value="weight">Вес</option>
+                <option value="none">Без счёта (просто отметка)</option>
+              </select>
+            </div>
+          )}
+          {!noScore && (
+            <input
+              className={input}
+              inputMode="decimal"
+              placeholder="Тайм-кап, минут (необязательно)"
+              value={capMin}
+              onChange={(e) => setCapMin(e.target.value)}
+            />
+          )}
         </div>
       )}
 
-      {mode === 'strength' && (
+      {effMode === 'strength' && (
         <div className="mt-3 grid gap-3">
-          <select className={input} value={exerciseId ?? ''} onChange={(e) => setExerciseId(Number(e.target.value) || null)}>
+          <select
+            className={input}
+            value={exerciseId ?? ''}
+            onChange={(e) => setExerciseId(Number(e.target.value) || null)}
+          >
             <option value="">Выбери упражнение</option>
             {exercises.data?.map((e) => (
               <option key={e.id} value={e.id}>
