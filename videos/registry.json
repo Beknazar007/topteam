@@ -97,12 +97,12 @@
       "health_review": "not_needed",
       "native_speaker_review": "not_needed",
       "id": "register-athlete-ru-v2",
-      "status": "draft",
-      "approved": false,
-      "approved_by": null,
+      "status": "published",
+      "approved": true,
+      "approved_by": "Бекназар (в чате, 2026-11-24)",
       "comment": null,
-      "published_url": null,
-      "published_at": null,
+      "published_url": "https://t.me/topteam312/6",
+      "published_at": "2026-11-24T17:44:37+06:00",
       "replaces": "register-athlete-ru"
     }
   ]
