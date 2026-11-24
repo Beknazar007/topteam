@@ -72,7 +72,7 @@ export function TodayPage() {
             to={`/wod/new?date=${today}`}
             className="flex h-12 items-center justify-center rounded-2xl border border-dashed border-accent/60 font-extrabold text-accent"
           >
-            ＋ Блок
+            ＋ Программа дня
           </Link>
         </div>
       )}

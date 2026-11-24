@@ -180,7 +180,7 @@ export function WeekPage() {
                   to={`/wod/new?date=${date}&from=week`}
                   className="mt-1 inline-block text-sm font-bold text-accent"
                 >
-                  ＋ Блок
+                  ＋ Добавить блоки
                 </Link>
               )}
             </div>
