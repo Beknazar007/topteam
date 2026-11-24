@@ -2,8 +2,8 @@
 feature: register · role: athlete · version: 0.0.0 · device: phone · langs: ru
 Длительность: ~55 с
 
-<!-- Начало — анимация videos/tools/slides/register.html (стена с QR → камера → Telegram-бот → «Старт» →
-     «Вступить в зал»): настоящий Telegram на стенде не записать. Дальше — реальное приложение на стенде. -->
+<!-- Начало — анимация videos/tools/slides/register.html (стена с QR → камера → Telegram → «Запустить»):
+     настоящий Telegram на стенде не записать. Дальше — реальное приложение на стенде. -->
 
 ## Шаги
 ```yaml
@@ -30,12 +30,8 @@ feature: register · role: athlete · version: 0.0.0 · device: phone · langs: 
 - id: 5
   action: click
   target: "#start"
-  pause: 2.0
-  say: s5
-- id: 6
-  action: click
-  target: "#join"
   pause: 1.5
+  say: s5
 - id: 7
   action: login
   value: newbie
@@ -69,9 +65,9 @@ feature: register · role: athlete · version: 0.0.0 · device: phone · langs: 
 |---|---|
 | s1 | Как зарегистрироваться в TopTeam. В вашем зале на стене висит QR-код. |
 | s2 | Откройте камеру телефона и наведите её на QR-код. |
-| s3 | Нажмите на ссылку — откроется Telegram, бот TopTeam. |
-| s4 | Нажмите «Старт». Так бот сможет присылать вам программу дня и итоги. |
-| s5 | Бот ответит кнопкой «Вступить в зал» — нажмите её. |
+| s3 | Нажмите на ссылку — откроется Telegram. |
+| s4 | Нажмите «Запустить». |
+| s5 | TopTeam откроется прямо внутри Telegram — без паролей и без регистрации. |
 | s6 | TopTeam открылся, и вы уже в своём зале — код вводить не нужно. Осталась пара вопросов. |
 | s7 | Укажите пол — для отдельных рейтингов мужчин и женщин. |
 | s8 | Выберите уровень. Его можно менять в каждой тренировке. |

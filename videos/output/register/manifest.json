@@ -9,11 +9,11 @@
       "device": "phone",
       "file": "videos/output/register/athlete-ru.mp4",
       "subtitles": "videos/output/register/athlete-ru.srt",
-      "duration_s": 50.8,
+      "duration_s": 46.0,
       "voice": "elevenlabs:eleven_v3:MWyJiWDobXN8FX3CJTdE",
       "voice_note": null,
       "scenario": "videos/scenarios/register.md",
-      "scenario_hash": "26e876ae070600014ac2eeb15aec2e1978911d10a2487959cc4eb0fc8398e8ca",
+      "scenario_hash": "f5c22ee0c19e0697f7d9dbc6502bc6019354d7ecf0aa4fb2465181d111454cfe",
       "app_version": "0.0.0",
       "health_review": "not_needed",
       "native_speaker_review": "not_needed",
@@ -22,7 +22,7 @@
         "videos/output/register/frames/athlete-ru-middle.png",
         "videos/output/register/frames/athlete-ru-end.png"
       ],
-      "created_at": "2026-11-24T16:42:28+06:00"
+      "created_at": "2026-11-24T17:44:18+06:00"
     }
   ]
 }
