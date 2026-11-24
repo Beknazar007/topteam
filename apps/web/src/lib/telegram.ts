@@ -23,13 +23,12 @@ export const webApp: WebApp | null =
 
 export const BOT_USERNAME = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string | undefined) ?? 'TopTeam07Bot';
 
-/** Ссылка на TopTeam в Telegram (для QR зала и кнопки «Открыть в Telegram»). */
+/**
+ * Ссылка, открывающая главное Mini App бота сразу (без «Start»).
+ * С кодом зала — startapp=<КОД>: initMiniApp() сохранит код, онбординг вступит в зал автоматически.
+ */
 export function botLink(inviteCode?: string) {
-  // С кодом — через «Старт» в боте: бот ответит кнопкой «Вступить в зал», и после «Старт» сможет присылать
-  // уведомления. Без кода — сразу Mini App. Старые QR с startapp=<КОД> тоже работают (initMiniApp).
-  return inviteCode
-    ? `https://t.me/${BOT_USERNAME}?start=join_${inviteCode}`
-    : `https://t.me/${BOT_USERNAME}?startapp=open`;
+  return `https://t.me/${BOT_USERNAME}?startapp=${inviteCode ?? 'open'}`;
 }
 
 export function initMiniApp() {

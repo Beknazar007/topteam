@@ -12,6 +12,6 @@ test.describe('qr-join · новичок', () => {
 
   test('без входа: код из ссылки уходит в кнопку «Открыть в Telegram»', async ({ page }) => {
     await page.goto(`/join/${GYM.code}`);
-    await expect(page.getByRole('link', { name: /Открыть в Telegram/ })).toHaveAttribute('href', new RegExp(`start=join_${GYM.code}$`));
+    await expect(page.getByRole('link', { name: /Открыть в Telegram/ })).toHaveAttribute('href', new RegExp(`startapp=${GYM.code}$`));
   });
 });

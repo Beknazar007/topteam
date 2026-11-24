@@ -32,7 +32,7 @@ export function InviteCard({ gym }: { gym: Gym }) {
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0 flex-1 basis-48">
           <div className="font-extrabold">Пригласить в зал</div>
-          <div className="text-[13px] text-muted">QR откроет бота TopTeam: «Старт» → «Вступить в зал»</div>
+          <div className="text-[13px] text-muted">QR откроет TopTeam в Telegram и сразу добавит в зал</div>
         </div>
         <div className="num rounded-xl bg-surface2 px-3 py-1.5 text-lg font-black tracking-[0.2em]">{gym.invite_code}</div>
       </div>
