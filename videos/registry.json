@@ -41,6 +41,48 @@
       "published_url": null,
       "published_at": null,
       "replaces": null
+    },
+    {
+      "id": "promo-athlete-ru",
+      "feature": "promo",
+      "role": "athlete",
+      "lang": "ru",
+      "app_version": "0.0.0",
+      "scenario": "videos/scenarios/promo.md",
+      "scenario_hash": "7a34a374f21d2c76f99400787093988cac15392d903267bfd22ac960843e6211",
+      "file": "videos/output/promo/athlete-ru.mp4",
+      "subtitles": "videos/output/promo/athlete-ru.srt",
+      "duration_s": 49.8,
+      "health_review": "not_needed",
+      "native_speaker_review": "not_needed",
+      "status": "draft",
+      "approved": false,
+      "approved_by": null,
+      "comment": null,
+      "published_url": null,
+      "published_at": null,
+      "replaces": null
+    },
+    {
+      "id": "coach-guide-coach-ru",
+      "feature": "coach-guide",
+      "role": "coach",
+      "lang": "ru",
+      "app_version": "0.0.0",
+      "scenario": "videos/scenarios/coach-guide.md",
+      "scenario_hash": "681fb65ef3a9626480bf010be8f30e98b489ebfd384f996148ccda8868998855",
+      "file": "videos/output/coach-guide/coach-ru.mp4",
+      "subtitles": "videos/output/coach-guide/coach-ru.srt",
+      "duration_s": 89.0,
+      "health_review": "not_needed",
+      "native_speaker_review": "not_needed",
+      "status": "draft",
+      "approved": false,
+      "approved_by": null,
+      "comment": null,
+      "published_url": null,
+      "published_at": null,
+      "replaces": null
     }
   ]
 }
