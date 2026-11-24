@@ -1,0 +1,14 @@
+{
+  "name": "topteam-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "stand": "node stand/start.mjs",
+    "seed": "node stand/seed.mjs",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.48.2",
+    "pg": "8.13.1"
+  }
+}
