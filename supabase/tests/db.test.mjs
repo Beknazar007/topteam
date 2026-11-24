@@ -249,3 +249,35 @@ const wBefore = (await db.query(`select workouts from user_stats where user_id=$
 const rcs = await log(U.coach, strT.id, 'RX', 90);
 ok('второй блок дня: без «Тренировка», но +10 «Ещё блок дня»', !rcs.xp_items.some(i => i.reason === 'workout') && rcs.xp_items.some(i => i.reason === 'block' && i.amount === 10));
 ok('тренировок в статистике не прибавилось', (await db.query(`select workouts from user_stats where user_id=$1`, [U.coach])).rows[0].workouts === wBefore);
+
+// ===== Номинации =====
+const N = { a: 'aaaaaaaa-0000-0000-0000-000000000001', b: 'aaaaaaaa-0000-0000-0000-000000000002', c: 'aaaaaaaa-0000-0000-0000-000000000003', d: 'aaaaaaaa-0000-0000-0000-000000000004' };
+for (const [k, id] of Object.entries(N)) {
+  await db.query(`insert into auth.users values ($1)`, [id]);
+  await db.query(`insert into profiles (id, tg_id, display_name, sex) values ($1, $2, $3, $4)`, [id, Math.floor(Math.random()*1e9), 'n' + k, k < 'c' ? 'm' : 'f']);
+}
+const g2 = (await as(N.a, `select * from create_gym('Nom Box', 'Бишкек')`)).rows[0];
+for (const u of [N.b, N.c, N.d]) await as(u, `select join_gym($1)`, [g2.invite_code]);
+const yd = await days(-1);
+const tw = (await as(N.a, `select * from create_wod(p_gym => $1, p_date => $2::date, p_title => 'Chipper', p_format => 'for_time', p_score_type => 'time', p_description => 'x')`, [g2.id, yd])).rows[0];
+await log(N.a, tw.id, 'RX', 300); await log(N.b, tw.id, 'RX', 400); await log(N.c, tw.id, 'RX', 500); await log(N.d, tw.id, 'Scaled', 600);
+const pts = Object.fromEntries((await db.query(`select user_id, points, beaten from athlete_points($1, $2::date, $2::date)`, [g2.id, yd])).rows.map(r => [r.user_id, r]));
+ok(`очки: 1-й из 2 = 20, 2-й = 15 (${pts[N.a].points}/${pts[N.b].points})`, pts[N.a].points === 20 && pts[N.a].beaten === 1 && pts[N.b].points === 15);
+const st = (await as(N.b, `select * from nomination_standings($1, 'day', $2::date)`, [g2.id, yd])).rows;
+ok('гонка дня видна атлету: лидер М — na', st.some(r => r.code === 'athlete_day' && r.sex === 'm' && r.place === 1 && r.user_id === N.a));
+await expectErr('чужой не видит номинации зала', as(U.out, `select * from nomination_standings($1, 'day', $2::date)`, [g2.id, yd]));
+await expectErr('атлет не может подвести итоги', as(N.b, `select award_nominations($1, 'day', $2::date)`, [g2.id, yd]));
+const xpA0 = await xpOf(N.a);
+const won = (await db.query(`select award_nominations($1, 'day', $2::date) n`, [g2.id, yd])).rows[0].n;
+ok(`итоги дня: Атлет (М) + Атлетка (Ж, ничья — обе) = ${won}`, won === 3);
+ok('победителю +30 XP и бейдж «Лучший день»', (await xpOf(N.a)) >= xpA0 + 30 && (await db.query(`select count(*)::int c from user_badges where user_id=$1 and code='nom_day'`, [N.a])).rows[0].c === 1);
+ok('пост номинации в ленте', (await db.query(`select payload->>'name' n from feed_items where user_id=$1 and kind='nomination'`, [N.a])).rows[0]?.n === 'Атлет дня');
+ok('уведомление победительнице «Атлетка дня»', (await db.query(`select text from notifications where user_id=$1 and kind='nomination'`, [N.c])).rows[0]?.text.includes('Атлетка дня'));
+ok('повторный запуск ничего не дублирует', (await db.query(`select award_nominations($1, 'day', $2::date) n`, [g2.id, yd])).rows[0].n === 0);
+const wkS = (await db.query(`select bishkek_week_start($1::date)::text d`, [yd])).rows[0].d;
+const wkN = (await db.query(`select award_nominations($1, 'week', $2::date) n`, [g2.id, wkS])).rows[0].n;
+ok(`итоги недели выданы (${wkN})`, wkN > 0);
+const moS = yd.slice(0, 8) + '01';
+const moSt = (await as(N.a, `select code from nomination_standings($1, 'month', $2::date)`, [g2.id, moS])).rows.map(r => r.code);
+ok('месяц: есть Атлет, Железная серия, Прогресс', ['athlete_month', 'iron_month', 'progress_month'].every(c => moSt.includes(c)));
+ok('award_due работает', (await db.query(`select award_due() n`)).rows[0].n >= 0);

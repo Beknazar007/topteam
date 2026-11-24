@@ -155,7 +155,7 @@ export function StatsPage() {
           </div>
         )}
         <div className="mt-3 flex items-center gap-3 text-[12px] text-muted">
-          <Legend className="bg-[color-mix(in_srgb,var(--accent)_50%,transparent)]" label="1 блок" />
+          <Legend className="bg-accent/50" label="1 блок" />
           <Legend className="bg-accent" label="2+ блока" />
           <Legend className="ring-2 ring-inset ring-text" label="сегодня" />
         </div>
@@ -192,7 +192,7 @@ function Legend({ className, label }: { className: string; label: string }) {
 }
 
 function cellClass(n: number, date: string, today: string, joinDate: string | null) {
-  const base = n >= 2 ? 'bg-accent text-white' : n === 1 ? 'bg-[color-mix(in_srgb,var(--accent)_50%,transparent)] text-white' : date > today ? 'opacity-30' : 'bg-surface2';
+  const base = n >= 2 ? 'bg-accent text-white' : n === 1 ? 'bg-accent/50 text-white' : date > today ? 'opacity-30' : 'bg-surface2';
   const before = joinDate && date < joinDate && n === 0 ? 'opacity-30' : '';
   return `${base} ${before} ${date === today ? 'ring-2 ring-inset ring-text' : ''}`;
 }

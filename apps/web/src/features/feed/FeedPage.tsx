@@ -92,13 +92,15 @@ function FeedCard({ item, fired: firedInit, myId }: { item: FeedItem; fired: boo
   // Бейдж / уровень / серия — компактной строкой, чтобы не забивать ленту
   if (item.kind !== 'result') {
     const label =
-      item.kind === 'badge'
+      item.kind === 'nomination'
+        ? `${String(p.emoji)} ${String(p.name)} · ${String(p.when)} — ${String(p.detail)}`
+        : item.kind === 'badge'
         ? `получает бейдж ${String(p.emoji)} «${String(p.name)}»`
         : item.kind === 'level'
           ? `▲ уровень ${String(p.level)} · ${levelTitle(Number(p.level))}`
           : `🔥 серия ${String(p.weeks)} нед. — цель недели выполнена`;
     return (
-      <div className="card mb-2 flex items-center gap-3 py-3">
+      <div className={`card mb-2 flex items-center gap-3 py-3 ${item.kind === 'nomination' ? 'border border-gold/40 bg-gradient-to-br from-gold/10 to-surface' : ''}`}>
         <Link to={own ? '/profile' : `/athlete/${item.user_id}`} className="shrink-0">
           <Avatar name={name} url={item.profiles?.avatar_url} size={34} />
         </Link>

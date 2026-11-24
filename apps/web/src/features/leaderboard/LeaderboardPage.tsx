@@ -10,11 +10,32 @@ import { useMe, type Scale } from '../../lib/me';
 import { rankRows } from '../../lib/rank';
 import { useLeaderboard, type BoardRow } from '../../lib/social';
 import { errorText, supabase } from '../../lib/supabase';
+import { Nominations } from './Nominations';
 import { bishkekToday, formatDay, isRanked, KIND_LABEL, useRecentWods } from '../../lib/wod';
 
 const MEDAL = ['', '🥇', '🥈', '🥉'];
 
 export function LeaderboardPage() {
+  const [tab, setTab] = useState<'noms' | 'blocks'>('noms');
+  return (
+    <>
+      <h1 className="mb-4 text-[26px] font-black tracking-tight">Рейтинг</h1>
+      <div className="mb-4">
+        <Segmented
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'noms', label: '🏆 Номинации' },
+            { value: 'blocks', label: '⏱️ Блоки' },
+          ]}
+        />
+      </div>
+      {tab === 'noms' ? <Nominations /> : <BlocksBoard />}
+    </>
+  );
+}
+
+function BlocksBoard() {
   const me = useMe();
   const qc = useQueryClient();
   const today = bishkekToday();
@@ -53,7 +74,6 @@ export function LeaderboardPage() {
 
   return (
     <>
-      <h1 className="mb-4 text-[26px] font-black tracking-tight">Рейтинг</h1>
       {wods.isLoading ? (
         <Spinner />
       ) : !wod ? (

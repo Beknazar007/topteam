@@ -10,7 +10,7 @@ export interface FeedItem {
   id: number;
   gym_id: string;
   user_id: string;
-  kind: 'result' | 'badge' | 'level' | 'streak';
+  kind: 'result' | 'badge' | 'level' | 'streak' | 'nomination';
   result_id: string | null;
   payload: Record<string, unknown>;
   fire_count: number;

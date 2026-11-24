@@ -7,6 +7,7 @@ import { formatScore } from '../../lib/format';
 import { RARITY_NAME, type Rarity } from '../../lib/game';
 import { useMe } from '../../lib/me';
 import { useAthlete, type Badge } from '../../lib/social';
+import { useAwards } from '../../lib/nominations';
 import { formatDay, useBenchmarks, useExercises } from '../../lib/wod';
 
 const ROLE: Record<string, string> = { owner: 'Владелец', coach: 'Тренер', athlete: 'Атлет' };
@@ -19,6 +20,7 @@ export function ProfileView({ userId, actions }: { userId: string; actions?: Rea
   const benchmarks = useBenchmarks();
   const exercises = useExercises();
   const [badge, setBadge] = useState<Badge | null>(null);
+  const awards = useAwards(userId);
 
   if (a.isLoading) return <Spinner />;
   if (!a.data?.profile) return <div className="py-20 text-center text-muted">Атлет не найден</div>;
@@ -67,6 +69,31 @@ export function ProfileView({ userId, actions }: { userId: string; actions?: Rea
       </div>
 
       {actions}
+
+      {Boolean(awards.data?.length) && (
+        <>
+          <div className="h-section">Награды · {awards.data!.length}</div>
+          <div className="flex flex-wrap gap-2">
+            {Object.values(
+              awards.data!.reduce<Record<string, { code: string; name: string; emoji: string; n: number; last: string }>>((acc, a) => {
+                const t = a.nomination_types;
+                if (!t) return acc;
+                const name = profile.sex === 'f' ? t.name_f : t.name_m;
+                const k = a.code;
+                acc[k] = acc[k] ? { ...acc[k], n: acc[k].n + 1 } : { code: k, name: t.period === 'day' || /недел|месяц|дня/.test(name) ? name : `${name} ${t.period === 'week' ? 'недели' : 'месяца'}`, emoji: t.emoji, n: 1, last: a.period_start };
+                return acc;
+              }, {}),
+            ).map((g) => (
+              <div key={g.code} className="rounded-2xl border border-gold/40 bg-gold/10 px-3 py-2">
+                <div className="text-sm font-black">
+                  {g.emoji} {g.name} {g.n > 1 && <span className="text-gold">×{g.n}</span>}
+                </div>
+                <div className="text-[11px] text-muted">последний раз {formatDay(g.last)}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="h-section">Рекорды</div>
       {prs.length === 0 ? (
