@@ -20,6 +20,9 @@ export default defineConfig({
   projects: [
     // TopTeam — телефонное приложение: все тесты в мобильном виде. Системный Chrome — без скачивания браузеров.
     { name: 'mobile', use: { ...devices['Pixel 7'], channel: 'chrome' } },
+    // iPhone (WebKit = движок Safari): ловит то, чего нет в Chrome, — например ширину полей даты.
+    // Только тесты с «@ios» в названии: `npx playwright test --project ios`.
+    { name: 'ios', use: { ...devices['iPhone 13'] }, grep: /@ios/ },
   ],
   webServer: {
     command: `npm --prefix ../apps/web run dev -- --port ${WEB_PORT} --strictPort --host 127.0.0.1`,

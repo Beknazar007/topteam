@@ -31,6 +31,24 @@ body {
   @apply bg-bg font-sans text-text antialiased;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
+  /* Страховка: если что-то окажется шире экрана, страница не уезжает вбок (clip не ломает sticky) */
+  overflow-x: clip;
+}
+
+/* iOS Safari: нативные поля даты/времени имеют свою минимальную ширину и игнорируют width:100% —
+   поле вылезало за экран и сдвигало всю страницу (особенно с длинным форматом «2026-ж., 25-ноя.») */
+input[type='date'],
+input[type='time'],
+input[type='datetime-local'] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+}
+input[type='date']::-webkit-date-and-time-value,
+input[type='time']::-webkit-date-and-time-value {
+  text-align: left;
 }
 
 @layer components {
