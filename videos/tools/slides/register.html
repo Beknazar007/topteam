@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>TopTeam — регистрация (анимация)</title>
+<!-- Анимированные сцены для видео регистрации: QR на стене → камера → Telegram-бот → «Старт» → кнопка мини-приложения.
+     Управляется из сценария: клики по элементам (кнопки ниже) и eval show('<сцена>'). Тексты бота — как в tg-webhook. -->
+<style>
+  :root{--bg:#0b0c0f;--accent:#ff6b2c;--tg:#2aabee;--tgbg:#0e1621;--tgbar:#17212b;--in:#182533;--out:#2b5278}
+  *{box-sizing:border-box;margin:0;padding:0}
+  /* без overflow:hidden на html/body: в мобильной эмуляции он сжимает кадр записи (серые поля) */
+  html,body{width:100%;height:100dvh;background:#000;font-family:-apple-system,"SF Pro Text","Segoe UI",Roboto,system-ui,sans-serif;color:#fff}
+  .scene{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .45s ease;overflow:hidden}
+  .scene.on{opacity:1;pointer-events:auto}
+  .status{position:absolute;top:0;left:0;right:0;height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-weight:700;font-size:15px;z-index:5}
+  /* --- стена зала --- */
+  #wall{background:radial-gradient(circle at 30% 20%,#3a2a20,transparent 60%),linear-gradient(160deg,#2b2b30,#121216 70%)}
+  .brick{position:absolute;inset:0;opacity:.13;background:repeating-linear-gradient(0deg,transparent 0 38px,#000 38px 41px),repeating-linear-gradient(90deg,transparent 0 88px,#000 88px 91px)}
+  .props{position:absolute;bottom:70px;left:0;right:0;text-align:center;font-size:54px;letter-spacing:18px;opacity:.85}
+  .poster{position:absolute;left:50%;top:150px;width:250px;transform:translateX(-50%) rotate(-1.5deg);background:#fff;color:#0b0c0f;border-radius:14px;padding:18px 18px 16px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.6)}
+  .poster h1{font-size:30px;font-weight:900;letter-spacing:-.5px}.poster h1 b{color:var(--accent)}
+  .poster p{font-size:14px;font-weight:700;margin:6px 0 10px}
+  .poster svg{width:190px;height:190px;display:block;margin:0 auto}
+  .poster small{display:block;margin-top:8px;font-size:12px;color:#555;font-weight:600}
+  .caption{position:absolute;left:20px;right:20px;bottom:150px;text-align:center;font-size:20px;font-weight:800;text-shadow:0 2px 12px #000}
+  /* --- камера --- */
+  #camera{background:#000}
+  #camera .view{position:absolute;inset:44px 0 150px;overflow:hidden;background:linear-gradient(160deg,#2b2b30,#121216 70%)}
+  #camera .poster{top:90px;transform:translateX(-50%) scale(.92)}
+  .frame{position:absolute;left:50%;top:150px;width:230px;height:230px;transform:translateX(-50%)}
+  .frame i{position:absolute;width:40px;height:40px;border:4px solid #ffd60a}
+  .frame i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0;border-radius:10px 0 0 0}
+  .frame i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0;border-radius:0 10px 0 0}
+  .frame i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0;border-radius:0 0 0 10px}
+  .frame i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0;border-radius:0 0 10px 0}
+  .scan{position:absolute;left:8px;right:8px;height:3px;background:#ffd60a;box-shadow:0 0 14px #ffd60a;animation:scan 1.4s ease-in-out infinite alternate}
+  @keyframes scan{from{top:10px}to{top:216px}}
+  .camui{position:absolute;bottom:0;left:0;right:0;height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+  .camui .modes{font-size:13px;font-weight:700;letter-spacing:1px;color:#ffd60a}
+  .shutter{width:68px;height:68px;border-radius:50%;border:5px solid #fff;background:#fff;box-shadow:inset 0 0 0 3px #000}
+  .pill{position:absolute;left:50%;top:420px;transform:translate(-50%,20px);opacity:0;transition:all .35s;background:#ffd60a;color:#000;border:0;border-radius:22px;padding:12px 18px;font-size:15px;font-weight:800;display:flex;gap:8px;align-items:center;white-space:nowrap;max-width:360px;cursor:pointer}
+  .pill.on{opacity:1;transform:translate(-50%,0)}
+  .pill .tgi{width:22px;height:22px;border-radius:50%;background:var(--tg);display:grid;place-items:center;color:#fff;font-size:12px}
+  /* --- Telegram --- */
+  #tg{background:var(--tgbg);display:flex;flex-direction:column}
+  .tghead{margin-top:44px;height:58px;background:var(--tgbar);display:flex;align-items:center;gap:12px;padding:0 14px}
+  .ava{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#ff6b2c,#c2185b);display:grid;place-items:center;font-weight:900;font-size:15px}
+  .tghead b{display:block;font-size:17px}.tghead span{font-size:13px;color:#7f91a4}
+  .chat{flex:1;padding:14px 10px;display:flex;flex-direction:column;gap:8px;overflow:hidden;background:radial-gradient(circle at 80% 10%,#16283a,transparent 55%),var(--tgbg)}
+  .about{margin:auto 14px;background:#182533e6;border-radius:16px;padding:16px;text-align:center}
+  .about .big{font-size:44px;margin-bottom:6px}.about b{display:block;font-size:16px;margin-bottom:6px}
+  .about p{font-size:14px;color:#c9d4df;line-height:1.4}
+  .msg{max-width:82%;padding:9px 12px;border-radius:16px;font-size:15px;line-height:1.38;white-space:pre-line;animation:pop .3s ease}
+  .msg.out{align-self:flex-end;background:var(--out);border-bottom-right-radius:4px}
+  .msg.in{align-self:flex-start;background:var(--in);border-bottom-left-radius:4px}
+  .msg time{float:right;margin:6px 0 -4px 10px;font-size:11px;color:#8fa7bf}
+  .kb{align-self:flex-start;width:82%;animation:pop .3s ease}
+  .kb button{width:100%;height:44px;border:0;border-radius:12px;background:#2b3f55;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+  @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+  .tgbottom{height:86px;background:var(--tgbar);display:flex;align-items:flex-start;justify-content:center;padding-top:14px}
+  #start{width:calc(100% - 28px);height:48px;border:0;border-radius:12px;background:var(--tg);color:#fff;font-size:16px;font-weight:800;letter-spacing:1px;cursor:pointer}
+  .typebar{width:calc(100% - 28px);height:44px;border-radius:22px;background:#0e1621;color:#6c7883;display:flex;align-items:center;padding:0 16px;font-size:15px}
+  /* --- открытие мини-приложения --- */
+  #app{background:rgba(0,0,0,.55)}
+  .sheet{position:absolute;left:0;right:0;bottom:0;top:60px;background:var(--bg);border-radius:16px 16px 0 0;transform:translateY(100%);transition:transform .5s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+  #app.on .sheet{transform:none}
+  .sheet .bar{position:absolute;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-weight:700;color:#8b93a1}
+  .logo{font-size:40px;font-weight:900;letter-spacing:-1px}.logo b{color:var(--accent)}
+  .spin{width:34px;height:34px;border-radius:50%;border:4px solid #2a2d35;border-top-color:var(--accent);animation:sp 0.8s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+</style></head>
+<body>
+<div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
+
+<section class="scene on" id="wall">
+  <div class="brick"></div>
+  <div class="poster"><h1>TOP<b>TEAM</b></h1><p>Стенд Бокс · вступай в зал</p><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 35 35" shape-rendering="crispEdges"><path fill="#FFFFFF" d="M0 0h35v35H0z"/><path stroke="#0B0C0F" d="M1 1.5h7m2 0h2m1 0h1m1 0h1m1 0h1m2 0h1m1 0h2m3 0h7M1 2.5h1m5 0h1m2 0h4m2 0h2m1 0h1m2 0h1m4 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h2m5 0h3m2 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h2m5 0h1m2 0h1m2 0h1m1 0h2m1 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m1 0h2m1 0h1m2 0h3m3 0h3m3 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m1 0h2m1 0h1m1 0h1m3 0h1m1 0h1m1 0h4m1 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h2m1 0h1m4 0h1m2 0h3m1 0h1M1 9.5h1m1 0h5m3 0h5m4 0h2m1 0h3m1 0h5M1 10.5h1m1 0h1m1 0h2m3 0h1m2 0h3m1 0h4m3 0h2m1 0h2m1 0h2m1 0h1M1 11.5h3m2 0h5m3 0h3m1 0h1m2 0h1m1 0h1m2 0h1m2 0h1m1 0h2M3 12.5h2m1 0h1m2 0h1m3 0h2m1 0h4m1 0h1m4 0h1m2 0h3m1 0h1M3 13.5h1m1 0h1m1 0h2m3 0h2m1 0h3m2 0h4m1 0h1m3 0h2m2 0h1M1 14.5h3m1 0h1m3 0h1m1 0h2m3 0h1m2 0h1m5 0h1m2 0h1m1 0h1m1 0h2M3 15.5h1m3 0h2m1 0h1m1 0h1m2 0h5m1 0h1m1 0h1m1 0h4m1 0h1m1 0h1M3 16.5h2m3 0h4m3 0h2m2 0h1m2 0h2m1 0h4m1 0h2M1 17.5h2m1 0h2m1 0h2m2 0h1m1 0h1m1 0h4m4 0h1m1 0h2m1 0h2m3 0h1M2 18.5h3m1 0h1m1 0h4m2 0h2m1 0h1m1 0h6m1 0h3m1 0h2m1 0h1M4 19.5h1m2 0h1m4 0h2m1 0h3m1 0h1m1 0h2m4 0h3m1 0h2M1 20.5h5m3 0h1m2 0h2m8 0h2m2 0h1m1 0h5M2 21.5h4m1 0h5m1 0h1m1 0h2m2 0h1m2 0h1m1 0h2m1 0h4m1 0h2M1 22.5h2m3 0h1m3 0h3m1 0h1m1 0h3m2 0h3m1 0h1m2 0h1m4 0h1M1 23.5h1m3 0h1m1 0h1m3 0h3m4 0h1m1 0h1m1 0h1m1 0h1m1 0h1m2 0h4M1 24.5h1m1 0h1m1 0h1m2 0h1m1 0h1m2 0h1m1 0h1m1 0h1m2 0h3m2 0h1m3 0h4M1 25.5h1m2 0h2m1 0h1m4 0h1m2 0h1m1 0h2m1 0h1m1 0h2m1 0h5m2 0h1M9 26.5h2m1 0h3m2 0h2m1 0h2m1 0h1m1 0h1m3 0h1m1 0h3M1 27.5h7m3 0h4m1 0h3m2 0h1m1 0h3m1 0h1m1 0h1m1 0h1M1 28.5h1m5 0h1m1 0h1m4 0h2m1 0h3m1 0h1m2 0h2m3 0h3M1 29.5h1m1 0h3m1 0h1m1 0h1m5 0h1m1 0h1m3 0h3m1 0h6m1 0h1M1 30.5h1m1 0h3m1 0h1m1 0h1m1 0h2m3 0h1m2 0h1m2 0h1m6 0h2m2 0h1M1 31.5h1m1 0h3m1 0h1m1 0h1m6 0h2m3 0h4m2 0h2M1 32.5h1m5 0h1m3 0h1m3 0h2m2 0h1m2 0h1m2 0h1m3 0h3M1 33.5h7m1 0h1m1 0h1m1 0h2m1 0h4m3 0h1m1 0h4m1 0h3"/></svg><small>Наведи камеру телефона</small></div>
+  <div class="caption">QR-код висит на стене зала</div>
+  <div class="props">🏋️ 🏃 🤸</div>
+</section>
+
+<section class="scene" id="camera">
+  <div class="view"><div class="brick"></div>
+    <div class="poster"><h1>TOP<b>TEAM</b></h1><p>Стенд Бокс · вступай в зал</p><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 35 35" shape-rendering="crispEdges"><path fill="#FFFFFF" d="M0 0h35v35H0z"/><path stroke="#0B0C0F" d="M1 1.5h7m2 0h2m1 0h1m1 0h1m1 0h1m2 0h1m1 0h2m3 0h7M1 2.5h1m5 0h1m2 0h4m2 0h2m1 0h1m2 0h1m4 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h2m5 0h3m2 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h2m5 0h1m2 0h1m2 0h1m1 0h2m1 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m1 0h2m1 0h1m2 0h3m3 0h3m3 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m1 0h2m1 0h1m1 0h1m3 0h1m1 0h1m1 0h4m1 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h2m1 0h1m4 0h1m2 0h3m1 0h1M1 9.5h1m1 0h5m3 0h5m4 0h2m1 0h3m1 0h5M1 10.5h1m1 0h1m1 0h2m3 0h1m2 0h3m1 0h4m3 0h2m1 0h2m1 0h2m1 0h1M1 11.5h3m2 0h5m3 0h3m1 0h1m2 0h1m1 0h1m2 0h1m2 0h1m1 0h2M3 12.5h2m1 0h1m2 0h1m3 0h2m1 0h4m1 0h1m4 0h1m2 0h3m1 0h1M3 13.5h1m1 0h1m1 0h2m3 0h2m1 0h3m2 0h4m1 0h1m3 0h2m2 0h1M1 14.5h3m1 0h1m3 0h1m1 0h2m3 0h1m2 0h1m5 0h1m2 0h1m1 0h1m1 0h2M3 15.5h1m3 0h2m1 0h1m1 0h1m2 0h5m1 0h1m1 0h1m1 0h4m1 0h1m1 0h1M3 16.5h2m3 0h4m3 0h2m2 0h1m2 0h2m1 0h4m1 0h2M1 17.5h2m1 0h2m1 0h2m2 0h1m1 0h1m1 0h4m4 0h1m1 0h2m1 0h2m3 0h1M2 18.5h3m1 0h1m1 0h4m2 0h2m1 0h1m1 0h6m1 0h3m1 0h2m1 0h1M4 19.5h1m2 0h1m4 0h2m1 0h3m1 0h1m1 0h2m4 0h3m1 0h2M1 20.5h5m3 0h1m2 0h2m8 0h2m2 0h1m1 0h5M2 21.5h4m1 0h5m1 0h1m1 0h2m2 0h1m2 0h1m1 0h2m1 0h4m1 0h2M1 22.5h2m3 0h1m3 0h3m1 0h1m1 0h3m2 0h3m1 0h1m2 0h1m4 0h1M1 23.5h1m3 0h1m1 0h1m3 0h3m4 0h1m1 0h1m1 0h1m1 0h1m1 0h1m2 0h4M1 24.5h1m1 0h1m1 0h1m2 0h1m1 0h1m2 0h1m1 0h1m1 0h1m2 0h3m2 0h1m3 0h4M1 25.5h1m2 0h2m1 0h1m4 0h1m2 0h1m1 0h2m1 0h1m1 0h2m1 0h5m2 0h1M9 26.5h2m1 0h3m2 0h2m1 0h2m1 0h1m1 0h1m3 0h1m1 0h3M1 27.5h7m3 0h4m1 0h3m2 0h1m1 0h3m1 0h1m1 0h1m1 0h1M1 28.5h1m5 0h1m1 0h1m4 0h2m1 0h3m1 0h1m2 0h2m3 0h3M1 29.5h1m1 0h3m1 0h1m1 0h1m5 0h1m1 0h1m3 0h3m1 0h6m1 0h1M1 30.5h1m1 0h3m1 0h1m1 0h1m1 0h2m3 0h1m2 0h1m2 0h1m6 0h2m2 0h1M1 31.5h1m1 0h3m1 0h1m1 0h1m6 0h2m3 0h4m2 0h2M1 32.5h1m5 0h1m3 0h1m3 0h2m2 0h1m2 0h1m2 0h1m3 0h3M1 33.5h7m1 0h1m1 0h1m1 0h2m1 0h4m3 0h1m1 0h4m1 0h3"/></svg><small>Наведи камеру телефона</small></div>
+    <div class="frame"><i></i><i></i><i></i><i></i><div class="scan"></div></div>
+  </div>
+  <button class="pill" id="tglink"><span class="tgi">✈</span>Открыть в Telegram · t.me/TopTeam07Bot</button>
+  <div class="camui"><div class="modes">ФОТО</div><div class="shutter"></div></div>
+</section>
+
+<section class="scene" id="tg">
+  <div class="tghead"><span style="color:var(--tg);font-size:22px">‹</span><div class="ava">TT</div><div><b>TopTeam</b><span>бот</span></div></div>
+  <div class="chat" id="chat">
+    <div class="about" id="about"><div class="big">🏋️</div><b>Что умеет этот бот?</b>
+      <p>Цифровая доска CrossFit-зала: программа дня, результаты, рейтинг и уведомления о тренировках.</p></div>
+  </div>
+  <div class="tgbottom" id="bottom"><button id="start">СТАРТ</button></div>
+</section>
+
+<section class="scene" id="app">
+  <div class="sheet"><div class="bar"><span>✕ Закрыть</span><span>TopTeam</span><span>⋯</span></div>
+    <div class="logo">TOP<b>TEAM</b></div><div class="spin"></div></div>
+</section>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  function show(name) {
+    document.querySelectorAll('.scene').forEach((s) => s.classList.toggle('on', s.id === name));
+    if (name === 'camera') setTimeout(() => $('tglink').classList.add('on'), 1600); // «камера нашла QR»
+  }
+  window.show = show;
+  $('tglink').onclick = () => show('tg');
+  $('start').onclick = () => {
+    $('about').remove();
+    $('bottom').innerHTML = '<div class="typebar">Сообщение</div>';
+    const chat = $('chat');
+    chat.insertAdjacentHTML('beforeend', '<div style="flex:1"></div><div class="msg out">/start<time>9:41 ✓✓</time></div>');
+    setTimeout(() => {
+      chat.insertAdjacentHTML('beforeend',
+        '<div class="msg in">👋 Добро пожаловать в TopTeam!\nЖми кнопку — вступишь в зал и увидишь WOD дня.<time>9:41</time></div>' +
+        '<div class="kb"><button id="join">🏋️ Вступить в зал</button></div>');
+      $('join').onclick = () => show('app');
+    }, 900);
+  };
+</script>
+</body></html>

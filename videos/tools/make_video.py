@@ -41,7 +41,9 @@ STAND_ANON = (
 STAND_PASSWORD = "stand-password-1"
 STAND_STORAGE_KEY = "sb-127-auth-token"
 # "slides": the drawn phone in videos/tools/slides/phone.html (browser menus, home screen).
-DEVICES = {"mobile": {"width": 390, "height": 844}, "desktop": {"width": 1280, "height": 800}, "slides": {"width": 540, "height": 960}}
+# "phone": phone-sized but without mobile emulation — for videos that start with an animation
+# (slides/*.html): Chrome's mobile emulation crops or blanks screencast frames of such pages.
+DEVICES = {"mobile": {"width": 390, "height": 844}, "phone": {"width": 390, "height": 844}, "desktop": {"width": 1280, "height": 800}, "slides": {"width": 540, "height": 960}}
 # Breathing room so a line never starts on the very first frame or gets cut at the end.
 LEAD_IN_S, TAIL_S, AFTER_LINE_S = 0.8, 1.5, 0.4
 
@@ -359,7 +361,13 @@ def record(sc: Scenario, lang: str, base_url: str, clips: dict[str, Path], clip_
             raw_value = raw_value.get(lang) if isinstance(raw_value, dict) else raw_value
             action, target, value = step["action"], raw_target, raw_value
             if action == "login":  # off-topic part of most videos: enter as a stand person (no Telegram on the stand)
-                page.evaluate("([k, v]) => localStorage.setItem(k, v)", [STAND_STORAGE_KEY, stand_session(str(value))])
+                # Works from any page (also the file:// animation): the session is put into the stand's
+                # localStorage on the next stand page load, once per tab, so a later logout stays a logout.
+                page.context.add_init_script(
+                    "if (location.origin === %s && !sessionStorage.getItem('__stand_login')) {"
+                    " sessionStorage.setItem('__stand_login', '1'); localStorage.setItem(%s, %s); }"
+                    % (json.dumps(base_url), json.dumps(STAND_STORAGE_KEY), json.dumps(stand_session(str(value))))
+                )
                 page.goto(place(target or "/", base_url))
                 page.wait_for_load_state("networkidle")
             elif action == "goto":

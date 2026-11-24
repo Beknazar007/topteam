@@ -34,7 +34,7 @@
       "duration_s": 40.0,
       "health_review": "not_needed",
       "native_speaker_review": "not_needed",
-      "status": "published",
+      "status": "outdated",
       "approved": true,
       "approved_by": "Бекназар (в чате, 2026-11-24)",
       "comment": null,
@@ -83,6 +83,27 @@
       "published_url": "https://t.me/topteam312/5",
       "published_at": "2026-11-24T16:27:52+06:00",
       "replaces": null
+    },
+    {
+      "feature": "register",
+      "role": "athlete",
+      "lang": "ru",
+      "app_version": "0.0.0",
+      "scenario": "videos/scenarios/register.md",
+      "scenario_hash": "26e876ae070600014ac2eeb15aec2e1978911d10a2487959cc4eb0fc8398e8ca",
+      "file": "videos/output/register/athlete-ru.mp4",
+      "subtitles": "videos/output/register/athlete-ru.srt",
+      "duration_s": 50.8,
+      "health_review": "not_needed",
+      "native_speaker_review": "not_needed",
+      "id": "register-athlete-ru-v2",
+      "status": "draft",
+      "approved": false,
+      "approved_by": null,
+      "comment": null,
+      "published_url": null,
+      "published_at": null,
+      "replaces": "register-athlete-ru"
     }
   ]
 }
