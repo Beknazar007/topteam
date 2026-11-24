@@ -29,6 +29,9 @@ export function SideNav({ onLog }: { onLog: () => void }) {
         <NavLink to="/profile" className={item}>
           <ProfileIcon /> Профиль
         </NavLink>
+        <NavLink to="/stats" className={item}>
+          <span className="w-6 text-center text-lg">📊</span> Мониторинг
+        </NavLink>
         {coach && (
           <NavLink to="/week" className={item}>
             <span className="w-6 text-center text-lg">📅</span> План недели

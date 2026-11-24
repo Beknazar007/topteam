@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Sheet } from '../../components/ui/Sheet';
 import { Spinner } from '../../components/ui/Spinner';
@@ -26,6 +27,9 @@ export function ProfilePage() {
         userId={profile.id}
         actions={
           <>
+            <Link to="/stats" className="mt-2.5 flex h-12 w-full items-center justify-center rounded-2xl bg-accent text-sm font-extrabold text-white">
+              📊 Мой мониторинг
+            </Link>
             <button onClick={() => setSettings(true)} className="mt-2.5 h-11 w-full rounded-2xl bg-surface2 text-sm font-extrabold">
               ⚙️ Настройки
             </button>
