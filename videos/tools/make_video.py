@@ -565,6 +565,8 @@ def main() -> None:
     finally:
         if stand:
             stand.stop()
+            # Recording changed the stand's data (results, onboarding): make the next e2e run reseed it
+            (ROOT / "e2e" / ".stand-today").unlink(missing_ok=True)
 
 
 if __name__ == "__main__":
