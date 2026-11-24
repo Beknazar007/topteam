@@ -12,3 +12,10 @@ supabase/.temp/
 Thumbs.db
 .vscode/*
 !.vscode/extensions.json
+
+# Видеоуроки: тяжёлые файлы не в git (.srt и manifest.json — в git)
+videos/output/**/*.mp4
+videos/output/**/frames/
+videos/.voice-cache/
+videos/tools/.venv/
+__pycache__/
