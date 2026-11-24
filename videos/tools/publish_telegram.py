@@ -16,6 +16,7 @@ import mimetypes
 import os
 import re
 import sys
+import urllib.error
 import urllib.request
 import uuid
 from datetime import datetime
@@ -99,16 +100,48 @@ def send_video(token: str, chat: str, video: Path, text: str, entry: dict) -> di
         f"Content-Type: {mimetypes.guess_type(video.name)[0] or 'video/mp4'}\r\n\r\n"
     ).encode()
     body += video.read_bytes() + f"\r\n--{boundary}--\r\n".encode()
-    req = urllib.request.Request(
-        f"https://api.telegram.org/bot{token}/sendVideo",
-        data=bytes(body),
-        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
-    )
+    req = telegram_request(token, "sendVideo", bytes(body), f"multipart/form-data; boundary={boundary}")
     with urllib.request.urlopen(req, timeout=300) as r:
         reply = json.loads(r.read())
     if not reply.get("ok"):
         raise RuntimeError(reply)
     return reply["result"]
+
+
+RELAY = "https://ayvhxjbhfypzixnuwshy.supabase.co/functions/v1/tg-relay"  # only the topteam project
+
+
+def telegram_request(token: str, method: str, data: bytes, content_type: str) -> urllib.request.Request:
+    """Bot API call. api.telegram.org is blocked from the owner's Mac, so by default it goes through the
+    tg-relay Edge Function (needs CRON_SECRET from supabase/.env); TG_DIRECT=1 calls Telegram directly."""
+    env = load_env()
+    if env.get("TG_DIRECT") == "1":
+        return urllib.request.Request(f"https://api.telegram.org/bot{token}/{method}", data=data,
+                                      headers={"Content-Type": content_type})
+    if not env.get("CRON_SECRET"):
+        sys.exit("CRON_SECRET не найден в supabase/.env — нужен для tg-relay")
+    return urllib.request.Request(f"{RELAY}?method={method}", data=data,
+                                  headers={"Content-Type": content_type, "x-cron-secret": env["CRON_SECRET"]})
+
+
+def check_bot_admin(token: str, chat: str) -> None:
+    """Fail early with a clear message if the bot cannot post to the channel."""
+    def call(method: str, payload: dict) -> dict:
+        req = telegram_request(token, method, json.dumps(payload).encode(), "application/json")
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            return json.loads(e.read() or b"{}")
+    me = call("getMe", {})
+    if not me.get("ok"):
+        sys.exit(f"Бот недоступен: {me}")
+    member = call("getChatMember", {"chat_id": chat, "user_id": me["result"]["id"]})
+    res = member.get("result") or {}
+    if not member.get("ok") or res.get("status") not in ("administrator", "creator") or res.get("can_post_messages") is False:
+        sys.exit(f"@{me['result']['username']} не может публиковать в {chat}: сделайте его администратором канала "
+                 f"с правом «Публикация сообщений» ({member.get('description') or res.get('status')})")
+    print(f"✓ @{me['result']['username']} — администратор {chat}")
 
 
 def post_url(chat: str, message: dict) -> str | None:
@@ -150,6 +183,10 @@ def main() -> None:
 
     env = load_env()
     token, chat = env.get("TELEGRAM_BOT_TOKEN"), env.get("TELEGRAM_CHANNEL_ID")
+    if args.send:
+        if not token or not chat:
+            sys.exit("TELEGRAM_BOT_TOKEN / TELEGRAM_CHANNEL_ID не заданы в videos/.env")
+        check_bot_admin(token, chat)
     for e in ready:
         text = caption(e)
         print(f"\n=== {e['id']} → {chat or '<TELEGRAM_CHANNEL_ID не задан>'}\n{text}")

@@ -39,7 +39,7 @@ mp4 и кадры в git не попадают, `.srt` и `manifest.json` — п
 
 | язык | edge-tts (бесплатно) | ElevenLabs |
 |---|---|---|
-| ru | `ru-RU-SvetlanaNeural` | `eleven_v3`, голос Oleg |
+| ru | `en-US-EmmaMultilingualNeural` (многоязычный, выбран владельцем 24.11.2026) | `eleven_v3`, голос Oleg |
 | ky | `kk-KZ-AigulNeural` — **казахский** голос, кыргызского в edge-tts нет | `eleven_v3`, голос Alymbek (кыргызский) |
 
 ElevenLabs включается, если в `videos/.env` есть `ELEVENLABS_API_KEY`. `ru-RU-DmitryNeural` в edge-tts сейчас обрывает длинные фразы — не использовать.

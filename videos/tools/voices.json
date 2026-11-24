@@ -1,6 +1,6 @@
 {
   "ru": {
-    "voice": "ru-RU-SvetlanaNeural",
+    "voice": "en-US-EmmaMultilingualNeural",
     "note": null,
     "elevenlabs": {
       "model": "eleven_v3",

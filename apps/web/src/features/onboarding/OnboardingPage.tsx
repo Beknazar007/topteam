@@ -19,27 +19,31 @@ export function OnboardingPage() {
   // Автовступление по коду из QR-ссылки
   const autoJoined = useRef(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  // Код из QR/ссылки есть — не показываем поле кода, пока идёт автовступление
+  const [joining, setJoining] = useState(() => Boolean(pendingInvite.get()));
   useEffect(() => {
     const code = pendingInvite.get();
-    if (!me.data || autoJoined.current || !code) return;
+    if (!me.data || autoJoined.current) return;
+    if (!code) {
+      setJoining(false);
+      return;
+    }
     autoJoined.current = true;
-    if (me.data.gym?.invite_code === code) {
-      pendingInvite.clear();
-      return;
-    }
     if (me.data.gym) {
-      pendingInvite.clear(); // MVP: один зал
+      pendingInvite.clear(); // уже в зале (этом или другом — MVP: один зал)
+      setJoining(false);
       return;
     }
-    supabase.rpc('join_gym', { p_code: code }).then(({ error }) => {
+    supabase.rpc('join_gym', { p_code: code }).then(async ({ error }) => {
       pendingInvite.clear();
       if (error) setJoinError(errorText(error));
-      else void refresh();
+      else await refresh();
+      setJoining(false);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me.data]);
 
-  if (me.isLoading || !me.data) return <Spinner />;
+  if (me.isLoading || !me.data || joining) return <Spinner />;
   const { gym, profile } = me.data;
   if (gym && profile.sex) return <Navigate to="/" replace />;
 

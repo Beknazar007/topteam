@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { callFunction, supabase } from '../../lib/supabase';
-import { useAuth } from '../../lib/auth';
+import { useAuth, pendingInvite } from '../../lib/auth';
 import { botLink, webApp } from '../../lib/telegram';
 
 const FEATURES = [
@@ -160,7 +160,8 @@ export function LoginPage() {
         ) : (
           <>
             <a
-              href={botLink()}
+              // Пришёл по ссылке /join/КОД — код уходит в Telegram, там вступит в зал сам
+              href={botLink(pendingInvite.get() ?? undefined)}
               className="flex h-[54px] w-full items-center justify-center gap-2 rounded-2xl bg-tg text-base font-extrabold tracking-wide text-white active:scale-[0.97]"
             >
               ✈️ Открыть в Telegram

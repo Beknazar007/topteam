@@ -27,7 +27,7 @@ for (const [key, p] of Object.entries(PEOPLE)) {
     [body.id, p.tg, `stand_${key}`, p.name],
   );
   // sex — отдельным update: на нём висит триггер «онбординг пройден»
-  await db.query(`update profiles set sex = $2 where id = $1`, [body.id, p.sex]);
+  if (p.sex) await db.query(`update profiles set sex = $2 where id = $1`, [body.id, p.sex]);
 }
 
 /** Выполнить SQL от имени пользователя (как запрос из приложения) */
@@ -50,6 +50,8 @@ async function as(key, sql, params = []) {
 
 // --- зал ---
 const [gym] = await as('owner', `select * from create_gym($1, $2)`, [GYM.name, GYM.city]);
+await db.query(`update gyms set invite_code = $2 where id = $1`, [gym.id, GYM.code]);
+gym.invite_code = GYM.code;
 for (const [key, p] of Object.entries(PEOPLE)) {
   if (!p.role || p.role === 'owner') continue;
   await as(key, `select join_gym($1)`, [gym.invite_code]);
