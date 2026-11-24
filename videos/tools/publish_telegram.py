@@ -71,7 +71,9 @@ def caption(entry: dict) -> str:
     lang = entry["lang"]
     parts = [
         f"🎬 <b>{escape(scenario_title(entry['scenario']))}</b>",
-        f"{LANG_LABEL.get(lang, lang)} · {ROLE_LABEL.get(lang, {}).get(entry['role'], entry['role'])} · v{entry['app_version']}",
+        # Version only once the app has a real one (release sets it); "0.0.0" would just confuse viewers
+        f"{LANG_LABEL.get(lang, lang)} · {ROLE_LABEL.get(lang, {}).get(entry['role'], entry['role'])}"
+        + ("" if entry["app_version"] == "0.0.0" else f" · v{entry['app_version']}"),
     ]
     # A re-recorded single video says only what changed for it; otherwise the whole CHANGELOG section of the version.
     news = entry.get("news") or whats_new(entry["app_version"])
