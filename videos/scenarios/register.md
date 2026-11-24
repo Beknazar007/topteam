@@ -1,5 +1,5 @@
 # Видео: Зарегистрироваться и вступить в свой зал
-feature: register · role: athlete · version: 0.0.0 · device: phone · langs: ru
+feature: register · role: athlete · version: 0.0.0 · device: mobile · langs: ru
 Длительность: ~55 с
 
 <!-- Начало — анимация videos/tools/slides/register.html (стена с QR → камера → Telegram → «Запустить»):
@@ -9,7 +9,7 @@ feature: register · role: athlete · version: 0.0.0 · device: phone · langs: 
 ```yaml
 - id: 1
   action: goto
-  target: "{tools}/slides/register.html"
+  target: "{slides}/register.html"
   pause: 2.0
   say: s1
 - id: 2
@@ -67,7 +67,7 @@ feature: register · role: athlete · version: 0.0.0 · device: phone · langs: 
 | s2 | Откройте камеру телефона и наведите её на QR-код. |
 | s3 | Нажмите на ссылку — откроется Telegram. |
 | s4 | Нажмите «Запустить». |
-| s5 | TopTeam откроется прямо внутри Telegram — без паролей и без регистрации. |
+| s5 | TopTeam откроется прямо в Telegram. |
 | s6 | TopTeam открылся, и вы уже в своём зале — код вводить не нужно. Осталась пара вопросов. |
 | s7 | Укажите пол — для отдельных рейтингов мужчин и женщин. |
 | s8 | Выберите уровень. Его можно менять в каждой тренировке. |

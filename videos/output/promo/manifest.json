@@ -9,7 +9,7 @@
       "device": "mobile",
       "file": "videos/output/promo/athlete-ru.mp4",
       "subtitles": "videos/output/promo/athlete-ru.srt",
-      "duration_s": 49.8,
+      "duration_s": 47.6,
       "voice": "elevenlabs:eleven_v3:MWyJiWDobXN8FX3CJTdE",
       "voice_note": null,
       "scenario": "videos/scenarios/promo.md",
@@ -22,7 +22,7 @@
         "videos/output/promo/frames/athlete-ru-middle.png",
         "videos/output/promo/frames/athlete-ru-end.png"
       ],
-      "created_at": "2026-11-24T15:31:16+06:00"
+      "created_at": "2026-11-24T18:31:18+06:00"
     }
   ]
 }

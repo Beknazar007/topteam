@@ -321,9 +321,15 @@ def locate(page, target: str):
     return node.first
 
 
+SLIDES_DIR = ROOT / "apps" / "web" / "public" / "__video_slides"  # git-ignored, exists only while recording
+
+
 def place(target: str, base_url: str) -> str:
-    """Absolute URL for a goto target: /path on the stand, {base} = stand URL, {tools} = videos/tools as file://."""
-    target = target.replace("{base}", base_url).replace("{tools}", TOOLS.as_uri())
+    """Absolute URL for a goto target: /path on the stand, {base} = stand URL, {tools} = videos/tools as file://,
+    {slides} = videos/tools/slides served by the stand itself. Animations must come from the app's own origin:
+    Chrome's screencast crops/blanks frames of file:// and foreign-origin pages (grey bars in the video)."""
+    target = (target.replace("{base}", base_url).replace("{tools}", TOOLS.as_uri())
+              .replace("{slides}", base_url + "/__video_slides"))
     return base_url + target if target.startswith("/") else target
 
 
@@ -342,12 +348,17 @@ def record(sc: Scenario, lang: str, base_url: str, clips: dict[str, Path], clip_
         # Block production outright: a recording must only ever show the stand's made-up people.
         ctx.route(re.compile(r"supabase\.co|topteam-kl7\.pages\.dev|api\.telegram\.org"), lambda route: route.abort())
         page = ctx.new_page()
-        t0 = time.monotonic()  # the video starts with the page
+        video_start = time.monotonic()  # the raw video starts with the page
         # Neutral first frame while the lead-in plays: the scenario's first page, else the login page.
         first = sc.steps[0] if sc.steps else {}
         page.goto(place(first["target"], base_url) if first.get("action") == "goto" else base_url + "/login")
+        # Chrome's screencast sometimes starts out of sync with the emulated phone screen and records only
+        # the top-left part (grey bars) until the next navigation; one reload right away fixes it every time.
+        page.reload()
         page.wait_for_load_state("networkidle")
-        page.wait_for_load_state("networkidle")
+        # Everything before here (blank page, the reload) is cut from the video; cues count from now.
+        t0 = time.monotonic()
+        skip = t0 - video_start
         time.sleep(LEAD_IN_S)
 
         for step in sc.steps:
@@ -417,7 +428,7 @@ def record(sc: Scenario, lang: str, base_url: str, clips: dict[str, Path], clip_
         video = Path(page.video.path())
         ctx.close()
         browser.close()
-    return video, cues
+    return video, cues, skip
 
 
 BED = TOOLS / "audio" / "bed.mp3"
@@ -439,8 +450,9 @@ def bed_filter(voice: str, bed_input: int, length: float, out: str) -> list[str]
     ]
 
 
-def mix(ffmpeg: str, video: Path, cues, clips: dict[str, Path], srt: Path, out: Path, bed: Path | None = None, length: float = 0) -> None:
-    args = [ffmpeg, "-y", "-loglevel", "error", "-i", str(video)]
+def mix(ffmpeg: str, video: Path, cues, clips: dict[str, Path], srt: Path, out: Path, bed: Path | None = None,
+        length: float = 0, skip: float = 0) -> None:
+    args = [ffmpeg, "-y", "-loglevel", "error", "-ss", f"{skip:.3f}", "-i", str(video)]
     for _, _, key in cues:
         args += ["-i", str(clips[key])]
     args += ["-i", str(srt)]
@@ -501,6 +513,9 @@ def main() -> None:
     manifest_path = out_dir / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {"feature": feature, "videos": []}
 
+    if SLIDES_DIR.exists():
+        shutil.rmtree(SLIDES_DIR)
+    shutil.copytree(TOOLS / "slides", SLIDES_DIR)
     stand = None
     base_url = args.base_url
     if not base_url:
@@ -528,7 +543,7 @@ def main() -> None:
                     voice = pick_voice(lang, voices, env)
                     clips = asyncio.run(synthesize(texts, voice, work))
                     clip_len = {k: duration(ffprobe, p) for k, p in clips.items()}
-                    raw, cues = record(sc, lang, base_url, clips, clip_len, work, texts)
+                    raw, cues, skip = record(sc, lang, base_url, clips, clip_len, work, texts)
 
                     srt = out_dir / f"{sc.role}-{lang}.srt"
                     srt.write_text(
@@ -537,7 +552,7 @@ def main() -> None:
                     )
                     mp4 = out_dir / f"{sc.role}-{lang}.mp4"
                     bed = None if args.no_bed or not BED.exists() else BED
-                    mix(ffmpeg, raw, cues, clips, srt, mp4, bed, duration(ffprobe, raw))
+                    mix(ffmpeg, raw, cues, clips, srt, mp4, bed, duration(ffprobe, raw) - skip, skip)
 
                 length = duration(ffprobe, mp4)
                 entry = {
@@ -567,6 +582,7 @@ def main() -> None:
             stand.stop()
             # Recording changed the stand's data (results, onboarding): make the next e2e run reseed it
             (ROOT / "e2e" / ".stand-today").unlink(missing_ok=True)
+        shutil.rmtree(SLIDES_DIR, ignore_errors=True)  # never let the animations reach a production build
 
 
 if __name__ == "__main__":
