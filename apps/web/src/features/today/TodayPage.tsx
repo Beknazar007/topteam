@@ -80,15 +80,29 @@ export function TodayPage() {
       {wods.isLoading ? (
         <Spinner />
       ) : todays.length ? (
-        todays.map((w) => (
-          <WodCard
-            key={w.id}
-            wod={w}
-            mine={results.data?.mine.get(w.id)}
-            count={results.data?.counts.get(w.id) ?? 0}
-            coach={coach}
-          />
-        ))
+        <div className="card mb-3 overflow-hidden !p-0">
+          <div className="flex items-baseline justify-between gap-2 border-b border-line px-4 pb-3 pt-4">
+            <div>
+              <div className="text-[12px] font-bold uppercase tracking-[0.08em] text-accent">Программа дня</div>
+              <div className="text-[20px] font-black leading-tight">{formatDay(today)}</div>
+            </div>
+            <div className="shrink-0 text-[13px] font-bold text-muted">
+              {todays.length} {todays.length === 1 ? 'блок' : todays.length < 5 ? 'блока' : 'блоков'}
+            </div>
+          </div>
+          <div className="divide-y divide-line">
+            {todays.map((w, i) => (
+              <WodCard
+                key={w.id}
+                wod={w}
+                n={i + 1}
+                mine={results.data?.mine.get(w.id)}
+                count={results.data?.counts.get(w.id) ?? 0}
+                coach={coach}
+              />
+            ))}
+          </div>
+        </div>
       ) : (
         <EmptyState emoji="🏋️" title="Тренировка дня ещё не опубликована">
           {coach
@@ -141,8 +155,10 @@ function WodCard({
   coach,
   compact,
   future,
+  n,
 }: {
   wod: Wod;
+  n?: number;
   mine?: Result;
   count: number;
   coach: boolean;
@@ -169,16 +185,19 @@ function WodCard({
   };
 
   return (
-    <div className="card mb-3 overflow-hidden">
+    <div className={n ? 'px-4 py-4' : 'card mb-3 overflow-hidden'}>
       <div className="mb-1 flex items-center justify-between text-[12px] font-bold uppercase tracking-[0.08em] text-muted">
-        <span>
-          {formatDay(wod.wod_date)} · {KIND_LABEL[wod.kind]}
+        <span className="flex items-center gap-2">
+          {n && (
+            <span className="grid h-6 w-6 place-items-center rounded-lg bg-accent text-[12px] font-black text-white">{n}</span>
+          )}
+          {n ? KIND_LABEL[wod.kind] : `${formatDay(wod.wod_date)} · ${KIND_LABEL[wod.kind]}`}
         </span>
         {isLoggable(wod) && wod.format !== 'other' && (
           <span className="rounded-lg bg-surface2 px-2 py-0.5 text-accent">{FORMAT_LABEL[wod.format]}</span>
         )}
       </div>
-      <div className="text-[24px] font-black uppercase leading-tight tracking-tight">{wod.title}</div>
+      <div className={`${n ? 'text-[20px]' : 'text-[24px]'} font-black uppercase leading-tight tracking-tight`}>{wod.title}</div>
       {!compact && <div className="mt-1.5 whitespace-pre-wrap text-[15px] leading-snug">{wod.description}</div>}
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted">
         {wod.time_cap_sec && <span>Тайм-кап {formatTime(wod.time_cap_sec)}</span>}
