@@ -19,3 +19,4 @@ videos/output/**/frames/
 videos/.voice-cache/
 videos/tools/.venv/
 __pycache__/
+apps/web/public/__video_slides/

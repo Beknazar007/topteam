@@ -1,5 +1,5 @@
 # Видео: <задача пользователя глаголом — «Записать результат»>
-feature: <feature> · role: <owner|coach|athlete> · version: X.Y.Z · device: mobile · langs: ru
+feature: <feature> · role: <owner|coach|athlete> · version: X.Y.Z · device: mobile|phone · langs: ru
 Длительность: ~90 с
 
 <!--
@@ -20,6 +20,7 @@ feature: <feature> · role: <owner|coach|athlete> · version: X.Y.Z · device: m
 Локаторы:
   label=<подпись поля>     role=button[name="<текст>"]     text=<видимый текст>
   в карточке: article:has-text("Fran") >> role=button[name="Записать результат"]
+device: phone — если видео начинается с анимации из videos/tools/slides/ (goto "{tools}/slides/<файл>.html", eval show('<сцена>')).
 Тексты — дословно как на экране (из apps/web/src/features/**). Данные стенда пишутся как есть.
 Если langs: ru, ky — value может различаться: value: {ru: "…", ky: "…"} (интерфейс остаётся русским).
 pause — сколько секунд держать шаг; если реплика длиннее, шаг держится до её конца.

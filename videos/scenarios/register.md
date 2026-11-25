@@ -1,59 +1,77 @@
 # Видео: Зарегистрироваться и вступить в свой зал
 feature: register · role: athlete · version: 0.0.0 · device: mobile · langs: ru
-Длительность: ~45 с
+Длительность: ~55 с
 
-<!-- Вход через Telegram на стенде не записать (нужен настоящий бот): показываем экран входа,
-     о подтверждении в Telegram говорит голос, дальше — реальные шаги приложения. -->
+<!-- Начало — анимация videos/tools/slides/register.html (стена с QR → камера → Telegram → «Запустить»):
+     настоящий Telegram на стенде не записать. Дальше — реальное приложение на стенде. -->
 
 ## Шаги
 ```yaml
 - id: 1
   action: goto
-  target: /join/STND26
-  pause: 1.5
+  target: "{slides}/register.html"
+  pause: 2.0
   say: s1
 - id: 2
-  action: highlight
-  target: text=Открыть в Telegram
-  pause: 1.5
+  action: eval
+  target: show('camera')
+  pause: 2.2
   say: s2
 - id: 3
-  action: login
-  value: newbie
-  target: /onboarding
-  pause: 1.5
+  action: click
+  target: "#tglink"
+  pause: 1.2
   say: s3
 - id: 4
-  action: click
-  target: role=button[name="Мужской"]
+  action: highlight
+  target: "#start"
   pause: 0.8
   say: s4
 - id: 5
   action: click
-  target: role=button[name="Scaled"]
-  pause: 0.8
+  target: "#start"
+  pause: 1.5
   say: s5
-- id: 6
-  action: click
-  target: role=button[name="3"]
-  pause: 0.8
-  say: s6
 - id: 7
+  action: login
+  value: newbie
+  target: /join/STND26
+  pause: 1.5
+  say: s6
+- id: 8
+  action: click
+  target: button:text-is("Мужской")
+  pause: 0.8
+  say: s7
+- id: 9
+  action: click
+  target: button:text-is("Scaled")
+  pause: 0.8
+  say: s8
+- id: 10
+  action: click
+  target: button:text-is("3")
+  pause: 0.8
+  say: s9
+- id: 11
   action: click
   target: role=button[name="Готово"]
   pause: 3.0
-  say: s7
+  say: s10
 ```
 
 ## Озвучка
 | ключ | ru |
 |---|---|
-| s1 | Покажу, как зарегистрироваться в TopTeam. Отсканируйте камерой QR-код на стене зала. |
-| s2 | Откроется TopTeam — нажмите «Открыть в Telegram». Пароль не нужен. |
-| s3 | Готово — вы уже в своём зале, код вводить не нужно. Осталась пара вопросов. |
-| s4 | Укажите пол — для отдельных рейтингов мужчин и женщин. |
-| s5 | Выберите уровень. Его можно менять в каждой тренировке. |
-| s6 | И цель — сколько тренировок в неделю. |
-| s7 | Нажмите «Готово». Перед вами программа дня. Нет QR — попросите у тренера код зала. |
+| s1 | Как зарегистрироваться в TopTeam. В вашем зале на стене висит QR-код. |
+| s2 | Откройте камеру телефона и наведите её на QR-код. |
+| s3 | Нажмите на ссылку — откроется Telegram. |
+| s4 | Нажмите «Запустить». |
+| s5 | TopTeam откроется прямо в Telegram. |
+| s6 | TopTeam открылся, и вы уже в своём зале — код вводить не нужно. Осталась пара вопросов. |
+| s7 | Укажите пол — для отдельных рейтингов мужчин и женщин. |
+| s8 | Выберите уровень. Его можно менять в каждой тренировке. |
+| s9 | И цель — сколько тренировок в неделю. |
+| s10 | Нажмите «Готово». Всё! Перед вами программа дня вашего зала. |
 
 Данные: стенд (зал «Стенд Бокс», код STND26, новичок «Тимур Новичков»), реальных имён нет.

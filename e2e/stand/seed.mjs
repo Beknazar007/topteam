@@ -58,7 +58,7 @@ for (const [key, p] of Object.entries(PEOPLE)) {
   if (p.role === 'coach') await as('owner', `select set_member_role($1, $2, 'coach')`, [gym.id, ids[key]]);
 }
 
-// --- программа: 7 дней назад … сегодня + завтра ---
+// --- программа: 7 дней назад … сегодня (завтра пусто — тренер собирает его в видео и тестах) ---
 const [{ today }] = (await db.query(`select bishkek_today()::text today`)).rows;
 const day = (n) => {
   const d = new Date(today + 'T00:00:00Z');
@@ -80,7 +80,7 @@ const program = (n) => [
       : { kind: 'wod', title: 'Пятничный чиппер', format: 'for_time', score: 'time', cap: 20, desc: 'For time:\n50 cal row\n40 burpees\n30 thrusters 40/30\n20 pull-ups' },
 ];
 const wods = [];
-for (let n = -7; n <= 1; n++) {
+for (let n = -7; n <= 0; n++) {
   for (const b of program(n)) {
     const [w] = await as(
       'coach',
